@@ -1,0 +1,111 @@
+version: '3.9'
+
+networks:
+  wifi_guest:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.10.0/24
+  wifi_mgmt:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.20.0/24
+  ethernet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
+  internet:
+    driver: bridge
+
+services:
+  # Nodo WiFi Guest
+  node1:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: node1
+    command: sleep infinity
+    networks:
+      wifi_guest:
+        ipv4_address: 172.28.10.11
+
+  node2:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: node2
+    command: sleep infinity
+    networks:
+      wifi_guest:
+        ipv4_address: 172.28.10.12
+
+  # Nodo WiFi Management
+  node3:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: node3
+    command: sleep infinity
+    networks:
+      wifi_mgmt:
+        ipv4_address: 172.28.20.13
+
+  node4:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: node4
+    command: sleep infinity
+    networks:
+      wifi_mgmt:
+        ipv4_address: 172.28.20.14
+
+  # Nodo Ethernet
+  node5:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: node5
+    command: sleep infinity
+    networks:
+      ethernet:
+        ipv4_address: 172.29.0.15
+
+  node6:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: node6
+    command: sleep infinity
+    networks:
+      ethernet:
+        ipv4_address: 172.29.0.16
+
+  # Nodo Server accessibile da tutte le reti tramite firewall-gw
+  server:
+    image: ubuntu:22.04
+    container_name: server
+    command: sleep infinity
+    networks:
+      ethernet:
+        ipv4_address: 172.29.0.100
+
+  # Firewall / Gateway
+  firewall-gw:
+    build: ./firewall-gw
+    container_name: firewall-gw
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    privileged: true
+    networks:
+      wifi_guest:
+        ipv4_address: 172.28.10.244
+      wifi_mgmt:
+        ipv4_address: 172.28.20.244
+      ethernet:
+        ipv4_address: 172.29.0.244
+      internet: {}
+    command: sh -c "/init-rules.sh && tail -f /dev/null"
