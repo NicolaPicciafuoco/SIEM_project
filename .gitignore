@@ -1,0 +1,11 @@
+*.tmp
+.~lock.Detect.ods#
+.vscode/settings.json
+.vscode/launch.json
+
+.DS_Store
+/.idea/
+pcaps/edited_syslog.pcap
+pcaps/zeek*
+
+.env
