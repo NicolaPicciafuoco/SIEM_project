@@ -1,0 +1,5 @@
+### TODO
+
+- Controllo Dockerfile
+- Evitare collegamento diretto tra services fratelli
+- Mettere il server al di là del Firewall
