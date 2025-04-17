@@ -25,10 +25,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.node
+    privileged: true
     container_name: node1
     command: sleep infinity
     cap_add:
-      - NET_ADMIN  # 🔥 Permette modifiche alla routing table
+      - NET_ADMIN  # Permette modifiche alla routing table
     networks:
       wifi_guest:
         ipv4_address: 172.28.10.11
@@ -40,7 +41,7 @@ services:
     container_name: node2
     command: sleep infinity
     cap_add:
-      - NET_ADMIN  # 🔥 Permette modifiche alla routing table
+      - NET_ADMIN  # Permette modifiche alla routing table
     networks:
       wifi_guest:
         ipv4_address: 172.28.10.12
@@ -50,8 +51,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.node
+    privileged: true
     container_name: node3
     command: sleep infinity
+    cap_add:
+      - NET_ADMIN  # Permette modifiche alla routing table
     networks:
       wifi_mgmt:
         ipv4_address: 172.28.20.13
@@ -62,6 +66,8 @@ services:
       dockerfile: Dockerfile.node
     container_name: node4
     command: sleep infinity
+    cap_add:
+      - NET_ADMIN  # Permette modifiche alla routing table
     networks:
       wifi_mgmt:
         ipv4_address: 172.28.20.14
@@ -74,7 +80,7 @@ services:
     container_name: node5
     command: sleep infinity
     cap_add:
-      - NET_ADMIN  # 🔥 Permette modifiche alla routing table
+      - NET_ADMIN  # Permette modifiche alla routing table
     networks:
       ethernet:
         ipv4_address: 172.29.0.15
@@ -85,6 +91,8 @@ services:
       dockerfile: Dockerfile.node
     container_name: node6
     command: sleep infinity
+    cap_add:
+      - NET_ADMIN  # Permette modifiche alla routing table
     networks:
       ethernet:
         ipv4_address: 172.29.0.16
@@ -94,6 +102,8 @@ services:
     image: ubuntu:22.04
     container_name: server
     command: sleep infinity
+    cap_add:
+      - NET_ADMIN  # Permette modifiche alla routing table
     networks:
       ethernet:
         ipv4_address: 172.29.0.100
