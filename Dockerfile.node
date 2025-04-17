@@ -3,9 +3,3 @@ FROM ubuntu:22.04
 # Installa strumenti di rete
 RUN apt-get update && apt-get install -y iputils-ping iproute2
 
-# Copia lo script di routing nel container
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-#  Usa lo script come entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
