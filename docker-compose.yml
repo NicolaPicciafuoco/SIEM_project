@@ -27,6 +27,8 @@ services:
       dockerfile: Dockerfile.node
     container_name: node1
     command: sleep infinity
+    cap_add:
+      - NET_ADMIN  # 🔥 Permette modifiche alla routing table
     networks:
       wifi_guest:
         ipv4_address: 172.28.10.11
@@ -37,6 +39,8 @@ services:
       dockerfile: Dockerfile.node
     container_name: node2
     command: sleep infinity
+    cap_add:
+      - NET_ADMIN  # 🔥 Permette modifiche alla routing table
     networks:
       wifi_guest:
         ipv4_address: 172.28.10.12
@@ -69,6 +73,8 @@ services:
       dockerfile: Dockerfile.node
     container_name: node5
     command: sleep infinity
+    cap_add:
+      - NET_ADMIN  # 🔥 Permette modifiche alla routing table
     networks:
       ethernet:
         ipv4_address: 172.29.0.15
