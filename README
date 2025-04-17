@@ -1,5 +1,16 @@
-### TODO
+## TODO
 
 - Controllo Dockerfile
 - Evitare collegamento diretto tra services fratelli
 - Mettere il server al di là del Firewall
+
+## Commit
+
+### Commit Gabriel 17/04/2025
+
+- Implementazione comunicazione services con alpine al posto di Ubuntu. 
+- Firewall pressocchè invariato: le regole sono diverse.
+- Comandi eseguiti lato *docker-compose.yaml*: da controllare e poi esportare in *Dockerfile*
+- LE RETI GUEST NON HANNO IL NAT_ADMIN E QUINID NON FANNO EFFETTIVAMENTE NIENTE SE NON COMINICASRE DIRETTAMENTE TRA DI LORO
+- Rimasto il collegamento diretto al server che deve essere in realtà dopo il firewall (DA CAMBIARE)
+- *Ripetizione file init-routes.sh* perchè non ho avvuto voglia di correggere la posizione nei file *Dockerfile* e *docker-compose.yaml*
