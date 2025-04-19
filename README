@@ -14,3 +14,7 @@
 - LE RETI GUEST NON HANNO IL NAT_ADMIN E QUINID NON FANNO EFFETTIVAMENTE NIENTE SE NON COMINICASRE DIRETTAMENTE TRA DI LORO
 - Rimasto il collegamento diretto al server che deve essere in realtà dopo il firewall (DA CAMBIARE)
 - *Ripetizione file init-routes.sh* perchè non ho avvuto voglia di correggere la posizione nei file *Dockerfile* e *docker-compose.yaml*
+
+### Commit Gabriel 19/04/2025
+
+- Pulizia copie di file *init-routes.sh*
