@@ -18,3 +18,4 @@
 ### Commit Gabriel 19/04/2025
 
 - Pulizia copie di file *init-routes.sh*
+- Correzione *server*: ora sta dopo il firewall ad un unico indirizzo

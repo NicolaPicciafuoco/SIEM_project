@@ -24,6 +24,16 @@ iptables -A OUTPUT -p icmp -j ACCEPT
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
+# Permetti traffico da tutte le reti verso server_net
+iptables -A FORWARD -i guest_net -o server_net -j ACCEPT
+iptables -A FORWARD -i mgmt_net -o server_net -j ACCEPT
+iptables -A FORWARD -i eth_net -o server_net -j ACCEPT
+
+# Permetti traffico di ritorno da server_net verso tutte le reti
+iptables -A FORWARD -i server_net -o guest_net -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -i server_net -o mgmt_net -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -i server_net -o eth_net -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
 # Permetti traffico intra-subnet (tra container della stessa rete)
 iptables -A FORWARD -i guest_net -o guest_net -j ACCEPT
 iptables -A FORWARD -i mgmt_net -o mgmt_net -j ACCEPT
