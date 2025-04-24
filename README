@@ -1,3 +1,10 @@
+## Commands
+
+- Splunk:
+  - *./splunk start*
+  - *./splunk stop*
+  - *./splunk restart*
+
 ## TODO
 
 - Controllo Dockerfile
