@@ -1,0 +1,19 @@
+Gabriel
+
+- Comandi usati per istallare splunk e renderlo disponibile dalla home in Fedora:
+    1 - sudo dnf install Scaricati/splunk-9.4.1-e3bdab203ac8.x86_64.rpm
+    2 - cd /opt/splunk/bin/
+    3 - sudo ./splunk start --accept-license
+    4 - sudo ./splunk stop
+    5 - cd
+    6 - nano ~/.bashrc
+    7 - *Dentro bashrc e sotto al blocco che aggiunge /bin*: 
+        # Splunk CLI
+        if ! [[ ":$PATH:" =~ ":(/opt/splunk/bin):" ]]; then
+            PATH="$PATH:/opt/splunk/bin"
+        fi
+        export PATH
+    8 - source ~/.bashrc
+    9 - sudo chown -R gabriel:gabriel /opt/splunk
+
+
