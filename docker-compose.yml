@@ -17,7 +17,7 @@ services:
     cap_add:
       - NET_ADMIN
     volumes:
-      - ./snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
+      - ./firewall-gw/snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
     command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
 
 
