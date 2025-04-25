@@ -17,6 +17,21 @@ services:
     cap_add:
       - NET_ADMIN
 
+  splunk:
+    image: splunk/splunk:latest
+    container_name: splunk
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=Gruppo1!
+    ports:
+      - "8000:8000"  # Interfaccia web Splunk
+    volumes:
+      - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
+    networks:
+      eth_net:
+        ipv4_address: 10.10.3.200
+
+
   guest1:
     image: alpine
     container_name: guest1
@@ -117,3 +132,6 @@ networks:
     ipam:
       config:
         - subnet: 10.10.4.0/24
+volumes:
+    splunk_data:
+        driver: local
