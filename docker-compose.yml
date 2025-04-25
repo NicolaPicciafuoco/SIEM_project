@@ -32,8 +32,8 @@ services:
     volumes:
       - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
     networks:
-      eth_net:
-        ipv4_address: 10.10.3.200
+      mgmt_net:
+        ipv4_address: 10.10.2.13
 
 
   guest1:
