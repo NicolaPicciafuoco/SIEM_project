@@ -1,127 +1,119 @@
 version: '3.9'
 
-networks:
-  wifi_guest:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.10.0/24
-  wifi_mgmt:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.20.0/24
-  ethernet:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.29.0.0/24
-  internet:
-    driver: bridge
-
 services:
-  # Nodo WiFi Guest
-  node1:
-    build:
-      context: .
-      dockerfile: Dockerfile.node
-    privileged: true
-    container_name: node1
-    command: sleep infinity
-    cap_add:
-      - NET_ADMIN  # Permette modifiche alla routing table
-    networks:
-      wifi_guest:
-        ipv4_address: 172.28.10.11
-
-  node2:
-    build:
-      context: .
-      dockerfile: Dockerfile.node
-    container_name: node2
-    command: sleep infinity
-    cap_add:
-      - NET_ADMIN  # Permette modifiche alla routing table
-    networks:
-      wifi_guest:
-        ipv4_address: 172.28.10.12
-
-  # Nodo WiFi Management
-  node3:
-    build:
-      context: .
-      dockerfile: Dockerfile.node
-    privileged: true
-    container_name: node3
-    command: sleep infinity
-    cap_add:
-      - NET_ADMIN  # Permette modifiche alla routing table
-    networks:
-      wifi_mgmt:
-        ipv4_address: 172.28.20.13
-
-  node4:
-    build:
-      context: .
-      dockerfile: Dockerfile.node
-    container_name: node4
-    command: sleep infinity
-    cap_add:
-      - NET_ADMIN  # Permette modifiche alla routing table
-    networks:
-      wifi_mgmt:
-        ipv4_address: 172.28.20.14
-
-  # Nodo Ethernet
-  node5:
-    build:
-      context: .
-      dockerfile: Dockerfile.node
-    container_name: node5
-    command: sleep infinity
-    cap_add:
-      - NET_ADMIN  # Permette modifiche alla routing table
-    networks:
-      ethernet:
-        ipv4_address: 172.29.0.15
-
-  node6:
-    build:
-      context: .
-      dockerfile: Dockerfile.node
-    container_name: node6
-    command: sleep infinity
-    cap_add:
-      - NET_ADMIN  # Permette modifiche alla routing table
-    networks:
-      ethernet:
-        ipv4_address: 172.29.0.16
-
-  # Nodo Server accessibile da tutte le reti tramite firewall-gw
-  server:
-    image: ubuntu:22.04
-    container_name: server
-    command: sleep infinity
-    cap_add:
-      - NET_ADMIN  # Permette modifiche alla routing table
-    networks:
-      ethernet:
-        ipv4_address: 172.29.0.100
-
-  # Firewall / Gateway
-  firewall-gw:
+  firewall:
     build: ./firewall-gw
     container_name: firewall-gw
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
     privileged: true
     networks:
-      wifi_guest:
-        ipv4_address: 172.28.10.244
-      wifi_mgmt:
-        ipv4_address: 172.28.20.244
-      ethernet:
-        ipv4_address: 172.29.0.244
-      internet: {}
-    command: sh -c "/init-rules.sh && tail -f /dev/null"
+      guest_net:
+        ipv4_address: 10.10.1.254
+      mgmt_net:
+        ipv4_address: 10.10.2.254
+      eth_net:
+        ipv4_address: 10.10.3.254
+      server_net:
+        ipv4_address: 10.10.4.254
+    cap_add:
+      - NET_ADMIN
+
+  guest1:
+    image: alpine
+    container_name: guest1
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    networks:
+      guest_net:
+        ipv4_address: 10.10.1.11
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
+
+  guest2:
+    image: alpine
+    container_name: guest2
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    networks:
+      guest_net:
+        ipv4_address: 10.10.1.12
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
+
+  mgmt1:
+    image: alpine
+    container_name: mgmt1
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    networks:
+      mgmt_net:
+        ipv4_address: 10.10.2.11
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
+
+  mgmt2:
+    image: alpine
+    container_name: mgmt2
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    networks:
+      mgmt_net:
+        ipv4_address: 10.10.2.12
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
+
+  eth1:
+    image: alpine
+    container_name: eth1
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    networks:
+      eth_net:
+        ipv4_address: 10.10.3.11
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
+
+  eth2:
+    image: alpine
+    container_name: eth2
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    networks:
+      eth_net:
+        ipv4_address: 10.10.3.12
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
+
+  core-server:
+    image: nginx:alpine
+    container_name: core-server
+    networks:
+      server_net:
+        ipv4_address: 10.10.4.100
+
+networks:
+  guest_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.1.0/24
+  mgmt_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.2.0/24
+  eth_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.3.0/24
+  server_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.4.0/24

@@ -1,5 +1,0 @@
-FROM ubuntu:22.04
-
-# Installa strumenti di rete
-RUN apt-get update && apt-get install -y iputils-ping iproute2
-
