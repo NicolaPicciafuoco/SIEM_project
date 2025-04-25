@@ -14,6 +14,8 @@ services:
         ipv4_address: 10.10.3.254
       server_net:
         ipv4_address: 10.10.4.254
+      int_net:
+        ipv4_address: 10.10.5.254
     cap_add:
       - NET_ADMIN
     volumes:
@@ -26,7 +28,7 @@ services:
     container_name: splunk
     environment:
       - SPLUNK_START_ARGS=--accept-license
-      - SPLUNK_PASSWORD=Gruppo1!
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
     ports:
       - "8000:8000"  # Interfaccia web Splunk
     volumes:
@@ -111,9 +113,26 @@ services:
   core-server:
     image: nginx:alpine
     container_name: core-server
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
     networks:
       server_net:
         ipv4_address: 10.10.4.100
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
+  
+  internet:
+    image: alpine
+    container_name: internet
+    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    networks:
+      int_net:
+        ipv4_address: 10.10.5.11
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    cap_add:
+      - NET_ADMIN
 
 networks:
   guest_net:
@@ -136,6 +155,11 @@ networks:
     ipam:
       config:
         - subnet: 10.10.4.0/24
+  int_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.5.0/24
 volumes:
     splunk_data:
         driver: local
