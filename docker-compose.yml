@@ -18,6 +18,25 @@ services:
         ipv4_address: 10.10.5.254
     cap_add:
       - NET_ADMIN
+    volumes:
+      - ./firewall-gw/snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
+    command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
+
+
+  splunk:
+    image: splunk/splunk:latest
+    container_name: splunk
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
+    ports:
+      - "8000:8000"  # Interfaccia web Splunk
+    volumes:
+      - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
+    networks:
+      eth_net:
+        ipv4_address: 10.10.3.200
+
 
   guest1:
     image: alpine
@@ -141,3 +160,6 @@ networks:
     ipam:
       config:
         - subnet: 10.10.5.0/24
+volumes:
+    splunk_data:
+        driver: local
