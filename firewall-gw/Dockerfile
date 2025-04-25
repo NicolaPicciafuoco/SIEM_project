@@ -24,8 +24,8 @@ COPY fw-init.sh /usr/local/bin/fw-init.sh
 COPY init-routes.sh /usr/local/bin/init-routes.sh
 # Copia il file di configurazione snort.conf nel container
 RUN mkdir -p /etc/snort && \
-    rm -f /etc/snort/snort.conf  # Rimuove qualsiasi file presente per evitare conflitti
-#COPY ./snort/snort.conf /etc/snort/snort.conf
+    rm -f /etc/snort/snort.conf  
+# Rimuove qualsiasi file presente per evitare conflitti
 
 
 
