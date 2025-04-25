@@ -26,3 +26,7 @@
 
 - Pulizia copie di file *init-routes.sh*
 - Correzione *server*: ora sta dopo il firewall ad un unico indirizzo
+
+### Commit Gabriel 25/04/2025
+
+- Correzione finale collegamenti tra nets via firewall
