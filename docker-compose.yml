@@ -19,8 +19,11 @@ services:
     cap_add:
       - NET_ADMIN
     volumes:
+      - snort_logs:/var/log/snort
       - ./firewall-gw/snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
-    command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
+      - ./firewall-gw/snort/rules:/etc/snort/rules  # Monta la cartella delle regole
+    # command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
+    # command: ["sh", "-c", "mkdir -p /var/log/snort && touch /var/log/snort/snort.log && service rsyslog start && snort -c /etc/snort/snort.conf -i any -l /var/log/snort"]
 
 
   splunk:
@@ -33,6 +36,8 @@ services:
       - "8000:8000"  # Interfaccia web Splunk
     volumes:
       - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
+      - ./splunk-etc/system/local:/opt/splunk/etc/system/local
+      - snort_logs:/var/log/snort
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
@@ -162,4 +167,6 @@ networks:
         - subnet: 10.10.5.0/24
 volumes:
     splunk_data:
+        driver: local
+    snort_logs:
         driver: local

@@ -80,5 +80,15 @@ iptables -A FORWARD -s 10.10.5.0/24 -d 10.10.3.0/24 -j REJECT
 # 14) # NAT per permettere routing
 iptables -t nat -A POSTROUTING -j MASQUERADE
 
-# 15) Mantieni vivo il container
-tail -f /dev/null
+# # 15) Mantieni vivo il container
+# tail -f /dev/null
+
+# 16) Avvio servizi di logging e Snort
+# Avvia rsyslog in foreground
+rsyslogd -n &
+
+# Crea cartella dei log di Snort
+mkdir -p /var/log/snort
+
+# Avvia Snort (continua a girare)
+exec snort -c /etc/snort/snort.conf -i eth0 -l /var/log/snort
