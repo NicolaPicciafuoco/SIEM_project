@@ -1,6 +1,22 @@
 #!/bin/bash
 set -e
 
+ip addr
+
+# Rinomina interfacce
+for IFACE in $(ls /sys/class/net/ | grep '^eth'); do
+    IP=$(ip -4 addr show dev "$IFACE" | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+    case "$IP" in
+        10.10.1.254) ip link set "$IFACE" down && ip link set "$IFACE" name guest0 && ip link set guest0 up ;;
+        10.10.2.254) ip link set "$IFACE" down && ip link set "$IFACE" name mgmt0 && ip link set mgmt0 up ;;
+        10.10.3.254) ip link set "$IFACE" down && ip link set "$IFACE" name eth0 && ip link set eth0 up ;;
+        10.10.4.254) ip link set "$IFACE" down && ip link set "$IFACE" name server0 && ip link set server0 up ;;
+        10.10.5.254) ip link set "$IFACE" down && ip link set "$IFACE" name int0 && ip link set int0 up ;;
+    esac
+done
+
+ip addr
+
 # 1) Abilita IP forwarding
 sysctl -w net.ipv4.ip_forward=1
 
