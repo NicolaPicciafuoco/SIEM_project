@@ -30,15 +30,16 @@ services:
     image: splunk/splunk:latest
     container_name: splunk
     privileged: true
+    user: root
     environment:
       - SPLUNK_START_ARGS=--accept-license
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
     ports:
       - "8000:8000"  # Interfaccia web Splunk
     volumes:
-      - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
-      - ./splunk-etc/system/local:/opt/splunk/etc/system/local
+      - splunk_data:/opt/splunk/var
       - snort_logs:/var/log/snort
+    #  - ./splunk.config:/opt/splunk/etc/system/local
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
