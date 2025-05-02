@@ -12,6 +12,7 @@ pcaps/zeek*
 
 splunk-etc/system/local/user-seed.conf
 splunk-etc/system/local/inputs.conf
+splunk-etc/system/local/input.conf
 splunk-etc/system/local/migration.conf
 splunk-etc/system/local/README
 splunk-etc/system/local/restmap.conf
