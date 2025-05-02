@@ -22,6 +22,7 @@ services:
       - snort_logs:/var/log/snort
       - ./firewall-gw/snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
       - ./firewall-gw/snort/rules:/etc/snort/rules  # Monta la cartella delle regole
+      - squid_logs:/var/log/squid:ro # Monta i log di Squid in sola lettura
     # command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
     # command: ["sh", "-c", "mkdir -p /var/log/snort && touch /var/log/snort/snort.log && service rsyslog start && snort -c /etc/snort/snort.conf -i any -l /var/log/snort"]
 
@@ -41,7 +42,22 @@ services:
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
-
+    depends_on:
+      - firewall  # Assicurati che il firewall sia avviato prima di Splunk
+    
+  squid:
+    image: sameersbn/squid:latest
+    container_name: squid
+    ports:
+      - "3128:3128"              # porta proxy
+    volumes:
+      - squid_logs:/var/log/squid      # log di Squid
+      - ./squid/squid.conf:/etc/squid/squid.conf:ro
+    networks:
+      eth_net:
+        ipv4_address: 10.10.3.210
+    depends_on:
+      - firewall  # Assicurati che il firewall sia avviato prima di Squid
 
   guest1:
     image: alpine
@@ -165,8 +181,11 @@ networks:
     ipam:
       config:
         - subnet: 10.10.5.0/24
+
 volumes:
     splunk_data:
         driver: local
     snort_logs:
         driver: local
+    squid_logs:
+      driver: local
