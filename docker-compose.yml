@@ -30,6 +30,7 @@ services:
   splunk:
     image: splunk/splunk:latest
     container_name: splunk
+    privileged: true
     environment:
       - SPLUNK_START_ARGS=--accept-license
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
