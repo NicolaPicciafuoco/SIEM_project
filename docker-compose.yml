@@ -30,6 +30,7 @@ services:
   splunk:
     image: splunk/splunk:latest
     container_name: splunk
+    privileged: true
     environment:
       - SPLUNK_START_ARGS=--accept-license
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
@@ -42,8 +43,6 @@ services:
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
-    depends_on:
-      - firewall  # Assicurati che il firewall sia avviato prima di Splunk
     
   squid:
     image: sameersbn/squid:latest
