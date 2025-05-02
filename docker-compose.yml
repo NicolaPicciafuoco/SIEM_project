@@ -5,6 +5,7 @@ services:
     build: ./firewall-gw
     container_name: firewall-gw
     privileged: true
+    user: root
     networks:
       guest_net:
         ipv4_address: 10.10.1.254
@@ -31,6 +32,9 @@ services:
     image: splunk/splunk:latest
     container_name: splunk
     privileged: true
+    user: root
+    env_file:
+      - .env
     environment:
       - SPLUNK_START_ARGS=--accept-license
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
@@ -38,7 +42,7 @@ services:
       - "8000:8000"  # Interfaccia web Splunk
     volumes:
       - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
-      - ./splunk-etc/system/local:/opt/splunk/etc/system/local
+      - ./splunk-etc/system/local:/opt/splunk/etc/system/local:rw,z
       - snort_logs:/var/log/snort
     networks:
       eth_net:
@@ -47,6 +51,8 @@ services:
   squid:
     image: sameersbn/squid:latest
     container_name: squid
+    privileged: true
+    user: root
     ports:
       - "3128:3128"              # porta proxy
     ulimits:
@@ -187,8 +193,8 @@ networks:
 
 volumes:
     splunk_data:
-        driver: local
+      driver: local
     snort_logs:
-        driver: local
+      driver: local
     squid_logs:
       driver: local
