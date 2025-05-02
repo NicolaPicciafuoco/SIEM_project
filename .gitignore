@@ -9,3 +9,10 @@ pcaps/edited_syslog.pcap
 pcaps/zeek*
 
 .env
+
+splunk-etc/system/local/inputs.conf
+splunk-etc/system/local/migration.conf
+splunk-etc/system/local/README
+splunk-etc/system/local/restmap.conf
+splunk-etc/system/local/server.conf
+splunk-etc/system/local/web.conf
