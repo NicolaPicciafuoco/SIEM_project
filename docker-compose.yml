@@ -49,6 +49,10 @@ services:
     container_name: squid
     ports:
       - "3128:3128"              # porta proxy
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 8192
     volumes:
       - squid_logs:/var/log/squid      # log di Squid
       - ./squid/squid.conf:/etc/squid/squid.conf:ro
