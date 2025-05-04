@@ -34,6 +34,11 @@ RUN mkdir -p /etc/snort && \
 RUN chmod +x /usr/local/bin/fw-init.sh
 RUN chmod +x /usr/local/bin/init-routes.sh
 
+# Creiamo la directory dei log di Snort e cambiamo proprietà e permessi
+RUN mkdir -p /var/log/snort && \
+    chown root:root /var/log/snort && \
+    chmod 755 /var/log/snort
+
 # Abilitiamo l’entrypoint
 ENTRYPOINT ["/usr/local/bin/fw-init.sh"]
 # # CMD ["sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0"]
