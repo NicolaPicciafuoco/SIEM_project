@@ -4,6 +4,8 @@
   - *./splunk start*
   - *./splunk stop*
   - *./splunk restart*
+- Squid:
+  - *`curl -x http://10.10.<2>.210:3128 -I <http://10.10.4.100>`*
 
 ## TODO
 
