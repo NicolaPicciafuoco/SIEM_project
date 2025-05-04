@@ -44,6 +44,7 @@ services:
       - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
       - ./splunk-etc/system/local:/opt/splunk/etc/system/local:rw,z
       - snort_logs:/var/log/snort
+      - squid_logs:/var/log/squid
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
