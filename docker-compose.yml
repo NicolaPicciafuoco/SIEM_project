@@ -51,9 +51,7 @@ services:
     image: sameersbn/squid:latest
     container_name: squid
     privileged: true
-    user: root
-    ports:
-      - "3128:3128"              # porta proxy
+    user: root            # porta proxy
     ulimits:
       nofile:
         soft: 8192
@@ -61,17 +59,7 @@ services:
     volumes:
       - squid_logs:/var/log/squid      # log di Squid
       - ./squid/squid.conf:/etc/squid/squid.conf # File di configurazione di Squid
-    networks:
-      guest_net:
-        ipv4_address: 10.10.1.210
-      mgmt_net:
-        ipv4_address: 10.10.2.210
-      eth_net:
-        ipv4_address: 10.10.3.210
-      server_net:
-        ipv4_address: 10.10.4.210
-      int_net:
-        ipv4_address: 10.10.5.210
+    network_mode: "service:firewall"
     depends_on:
       - firewall  # Assicurati che il firewall sia avviato prima di Squid
 
@@ -150,14 +138,19 @@ services:
   core-server:
     image: nginx:alpine
     container_name: core-server
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    command: >
+      sh -c "
+        apk add --no-cache iputils traceroute libcap && 
+        sh /init-routes.sh && 
+        nginx -g 'daemon off;'
+      "
     networks:
       server_net:
         ipv4_address: 10.10.4.100
-    volumes:
-      - ./firewall-gw/init-routes.sh:/init-routes.sh
-    cap_add:
-      - NET_ADMIN
   
   internet:
     image: alpine

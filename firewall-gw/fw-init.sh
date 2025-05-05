@@ -25,6 +25,33 @@ iptables -F
 iptables -X
 iptables -t nat -F
 
+# 4) Transparent proxy REDIRECT: tutto il TCP/80 → porta 3128 locale (Squid)
+iptables -t nat -A PREROUTING \
+    -p tcp --dport 80 \
+    -j REDIRECT --to-port 3128
+
+# 5) INPUT: lascia passare le nuove connessioni verso Squid su 3128
+iptables -A INPUT \
+    -p tcp --dport 3128 \
+    -m conntrack --ctstate NEW,ESTABLISHED \
+    -j ACCEPT
+
+# 6) INPUT: lascia passare le risposte (ESTABLISHED,RELATED) verso Squid
+iptables -A INPUT \
+    -m conntrack --ctstate ESTABLISHED,RELATED \
+    -j ACCEPT
+
+# 7) OUTPUT: permetti a Squid di aprire nuove connessioni HTTP verso i server
+iptables -A OUTPUT \
+    -p tcp --dport 80 \
+    -m conntrack --ctstate NEW,ESTABLISHED \
+    -j ACCEPT
+
+# 8) OUTPUT: permetti a Squid di inviare le risposte ai client
+iptables -A OUTPUT \
+    -m conntrack --ctstate ESTABLISHED,RELATED \
+    -j ACCEPT
+
 # 3) Policy di default
 iptables -P INPUT   DROP
 iptables -P OUTPUT  DROP
@@ -78,7 +105,7 @@ iptables -A FORWARD -s 10.10.5.0/24 -d 10.10.2.0/24 -j REJECT
 iptables -A FORWARD -s 10.10.5.0/24 -d 10.10.3.0/24 -j REJECT
 
 # 14) # NAT per permettere routing
-iptables -t nat -A POSTROUTING -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.10.5.0/24 -o int0 -j MASQUERADE
 
 # # 15) Mantieni vivo il container
 # tail -f /dev/null
