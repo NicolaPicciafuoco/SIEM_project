@@ -8,4 +8,8 @@
 pcaps/edited_syslog.pcap
 pcaps/zeek*
 
+
+firewall-gw/snort/rules/local.rules
+firewall-gw/snort/snort.conf
+
 .env
