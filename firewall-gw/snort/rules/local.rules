@@ -1,1 +1,23 @@
-alert ip any any -> any any (msg:"Trovato traffico IP"; sid:1000001; rev:1;)
+
+alert tcp $GUEST_NET any -> $SERVER_NET ![80,443,21] (msg:"POLICY VIOLATION: Guest Network attempting non-HTTP/HTTPS/FTP to Server Network"; sid:2000020; rev:1;)
+alert udp $GUEST_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Guest Network attempting UDP to Server Network"; sid:2000021; rev:1;)
+alert icmp $GUEST_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Guest Network attempting ICMP to Server Network"; sid:2000022; rev:1;)
+
+alert tcp $MGMT_NET any -> $SERVER_NET ![80,443,21] (msg:"POLICY VIOLATION: Management Network attempting non-HTTP/HTTPS/FTP to Server Network"; sid:2000023; rev:1;)
+alert udp $MGMT_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Management Network attempting UDP to Server Network"; sid:2000024; rev:1;)
+alert icmp $MGMT_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Management Network attempting ICMP to Server Network"; sid:2000025; rev:1;)
+
+alert tcp $ETH_NET any -> $SERVER_NET ![80,443,21] (msg:"POLICY VIOLATION: Ethernet Network attempting non-HTTP/HTTPS/FTP to Server Network"; sid:2000026; rev:1;)
+alert udp $ETH_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Ethernet Network attempting UDP to Server Network"; sid:2000027; rev:1;)
+alert icmp $ETH_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Ethernet Network attempting ICMP to Server Network"; sid:2000028; rev:1;)
+
+alert tcp $ETH_NET any -> $GUEST_NET any (msg:"POLICY VIOLATION: Ethernet Network attempting TCP to Guest Network (non-ping)"; sid:2000029; rev:1;)
+alert udp $ETH_NET any -> $GUEST_NET any (msg:"POLICY VIOLATION: Ethernet Network attempting UDP to Guest Network (non-ping)"; sid:2000030; rev:1;)
+alert tcp $ETH_NET any -> $MGMT_NET any (msg:"POLICY VIOLATION: Ethernet Network attempting TCP to Management Network (non-ping)"; sid:2000031; rev:1;)
+alert udp $ETH_NET any -> $MGMT_NET any (msg:"POLICY VIOLATION: Ethernet Network attempting UDP to Management Network (non-ping)"; sid:2000032; rev:1;)
+alert icmp $ETH_NET any -> $GUEST_NET !8 (msg:"POLICY VIOLATION: Ethernet Network attempting non-echo-request ICMP to Guest Network"; sid:2000033; rev:1;)
+alert icmp $ETH_NET any -> $MGMT_NET !8 (msg:"POLICY VIOLATION: Ethernet Network attempting non-echo-request ICMP to Management Network"; sid:2000034; rev:1;)
+
+alert tcp $INT_NET any -> $SERVER_NET ![80,443,21] (msg:"POLICY VIOLATION: Internet Network attempting non-HTTP/HTTPS/FTP to Server Network"; sid:2000035; rev:1;)
+alert udp $INT_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Internet Network attempting UDP to Server Network"; sid:2000036; rev:1;)
+alert icmp $INT_NET any -> $SERVER_NET any (msg:"POLICY VIOLATION: Internet Network attempting ICMP to Server Network"; sid:2000037; rev:1;)

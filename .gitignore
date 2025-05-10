@@ -8,6 +8,10 @@
 pcaps/edited_syslog.pcap
 pcaps/zeek*
 
+
+firewall-gw/snort/rules/local.rules
+firewall-gw/snort/snort.conf
+
 .env
 
 splunk-etc/system/local/user-seed.conf

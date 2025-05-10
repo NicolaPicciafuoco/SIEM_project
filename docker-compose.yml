@@ -29,8 +29,8 @@ services:
 
 
   splunk:
-    image: splunk/splunk:latest
     container_name: splunk
+    build: ./splunk
     privileged: true
     user: root
     environment:
@@ -42,7 +42,7 @@ services:
       - splunk_data:/opt/splunk/var
       - snort_logs:/var/log/snort
       - squid_logs:/var/log/squid
-    #  - ./splunk.config:/opt/splunk/etc/system/local
+    #  - ./splunk:/opt/splunk/etc/system/local
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
@@ -66,72 +66,78 @@ services:
   guest1:
     image: alpine
     container_name: guest1
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
     networks:
       guest_net:
         ipv4_address: 10.10.1.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
   guest2:
     image: alpine
     container_name: guest2
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
     networks:
       guest_net:
         ipv4_address: 10.10.1.12
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
   mgmt1:
     image: alpine
     container_name: mgmt1
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
     networks:
       mgmt_net:
         ipv4_address: 10.10.2.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
   mgmt2:
     image: alpine
     container_name: mgmt2
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
     networks:
       mgmt_net:
         ipv4_address: 10.10.2.12
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
   eth1:
     image: alpine
     container_name: eth1
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
     networks:
       eth_net:
         ipv4_address: 10.10.3.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
   eth2:
     image: alpine
     container_name: eth2
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
     networks:
       eth_net:
         ipv4_address: 10.10.3.12
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
@@ -155,12 +161,13 @@ services:
   internet:
     image: alpine
     container_name: internet
-    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
     networks:
       int_net:
         ipv4_address: 10.10.5.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
