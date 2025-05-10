@@ -29,8 +29,8 @@ services:
 
 
   splunk:
-    image: splunk/splunk:latest
     container_name: splunk
+    build: ./splunk
     privileged: true
     user: root
     environment:
@@ -42,7 +42,7 @@ services:
       - splunk_data:/opt/splunk/var
       - snort_logs:/var/log/snort
       - squid_logs:/var/log/squid
-    #  - ./splunk.config:/opt/splunk/etc/system/local
+    #  - ./splunk:/opt/splunk/etc/system/local
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
