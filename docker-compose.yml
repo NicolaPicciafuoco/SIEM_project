@@ -72,6 +72,7 @@ services:
         ipv4_address: 10.10.1.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
@@ -84,6 +85,7 @@ services:
         ipv4_address: 10.10.1.12
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
@@ -96,6 +98,7 @@ services:
         ipv4_address: 10.10.2.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
@@ -108,6 +111,7 @@ services:
         ipv4_address: 10.10.2.12
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
@@ -120,6 +124,7 @@ services:
         ipv4_address: 10.10.3.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
@@ -132,6 +137,7 @@ services:
         ipv4_address: 10.10.3.12
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
@@ -161,6 +167,7 @@ services:
         ipv4_address: 10.10.5.11
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh
+      - ./attacker-scripts/:/attacker-scripts/
     cap_add:
       - NET_ADMIN
 
