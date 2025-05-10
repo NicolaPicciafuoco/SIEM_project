@@ -4,12 +4,24 @@
   - *./splunk start*
   - *./splunk stop*
   - *./splunk restart*
+- Squid:
+  - *`curl -x http://10.10.<2>.210:3128 -I <http://10.10.4.100>`*
 
 ## TODO
 
-- Controllo Dockerfile
-- Evitare collegamento diretto tra services fratelli
-- Mettere il server al di là del Firewall
+- Passo 1
+  - Tutto deve passare per il firewall
+  - Tutti possono raggiunger il SERVER tramite solo i protocolli controllati da squid (HTTP, HTTPS, FTP)
+  - Guest: solo nodi fratelli e Server
+  - Management: solo nodi fratelli e Server
+  - Ethernet: solo nodi fratelli e Server e solo PINGARE Guest e Management 
+  - Internet: solo Server
+- Passo 2
+  - Ampliare iptables, snort e squid in base alle policy
+  - ...
+- Passo 3
+  - Definire metrica di valutazione punti per la fiducia (*Splunk?*)
+  - ...
 
 ## Commit
 

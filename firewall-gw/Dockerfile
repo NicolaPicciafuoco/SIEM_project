@@ -24,15 +24,28 @@ RUN apt-get update \
 COPY rsyslog-snort.conf /etc/rsyslog.d/90-snort.conf
 COPY fw-init.sh /usr/local/bin/fw-init.sh
 COPY init-routes.sh /usr/local/bin/init-routes.sh
+
 # Copia il file di configurazione snort.conf nel container
 RUN mkdir -p /etc/snort && \
     rm -f /etc/snort/snort.conf  
 # Rimuove qualsiasi file presente per evitare conflitti
 
-
+# Copia il file di configurazione squid.conf nel container
+RUN mkdir -p /etc/squid && \
+    rm -f /etc/squid/squid.conf
 
 RUN chmod +x /usr/local/bin/fw-init.sh
 RUN chmod +x /usr/local/bin/init-routes.sh
+
+# Creiamo la directory dei log di Snort e cambiamo proprietà e permessi
+RUN mkdir -p /var/log/snort && \
+    chown root:root /var/log/snort && \
+    chmod 755 /var/log/snort
+
+# Creiamo la directory dei log di Squid e cambiamo proprietà e permessi
+RUN mkdir -p /var/log/squid && \
+    chown root:root /var/log/squid && \
+    chmod 755 /var/log/squid
 
 # Abilitiamo l’entrypoint
 ENTRYPOINT ["/usr/local/bin/fw-init.sh"]

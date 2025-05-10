@@ -5,6 +5,7 @@ services:
     build: ./firewall-gw
     container_name: firewall-gw
     privileged: true
+    user: root
     networks:
       guest_net:
         ipv4_address: 10.10.1.254
@@ -22,7 +23,7 @@ services:
       - snort_logs:/var/log/snort
       - ./firewall-gw/snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
       - ./firewall-gw/snort/rules:/etc/snort/rules  # Monta la cartella delle regole
-      - squid_logs:/var/log/squid:ro # Monta i log di Squid in sola lettura
+      - squid_logs:/var/log/squid # Monta i log di Squid in sola lettura
     # command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
     # command: ["sh", "-c", "mkdir -p /var/log/snort && touch /var/log/snort/snort.log && service rsyslog start && snort -c /etc/snort/snort.conf -i any -l /var/log/snort"]
 
@@ -31,15 +32,17 @@ services:
     image: splunk/splunk:latest
     container_name: splunk
     privileged: true
+    user: root
     environment:
       - SPLUNK_START_ARGS=--accept-license
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
     ports:
       - "8000:8000"  # Interfaccia web Splunk
     volumes:
-      - splunk_data:/opt/splunk/var  # Log e configurazione persistenti
-      - ./splunk-etc/system/local:/opt/splunk/etc/system/local
+      - splunk_data:/opt/splunk/var
       - snort_logs:/var/log/snort
+      - squid_logs:/var/log/squid
+    #  - ./splunk.config:/opt/splunk/etc/system/local
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
@@ -47,21 +50,23 @@ services:
   squid:
     image: sameersbn/squid:latest
     container_name: squid
-    ports:
-      - "3128:3128"              # porta proxy
+    privileged: true
+    user: root            # porta proxy
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 8192
     volumes:
       - squid_logs:/var/log/squid      # log di Squid
-      - ./squid/squid.conf:/etc/squid/squid.conf:ro
-    networks:
-      eth_net:
-        ipv4_address: 10.10.3.210
+      - ./squid/squid.conf:/etc/squid/squid.conf # File di configurazione di Squid
+    network_mode: "service:firewall"
     depends_on:
       - firewall  # Assicurati che il firewall sia avviato prima di Squid
 
   guest1:
     image: alpine
     container_name: guest1
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
     networks:
       guest_net:
         ipv4_address: 10.10.1.11
@@ -73,7 +78,7 @@ services:
   guest2:
     image: alpine
     container_name: guest2
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
     networks:
       guest_net:
         ipv4_address: 10.10.1.12
@@ -85,7 +90,7 @@ services:
   mgmt1:
     image: alpine
     container_name: mgmt1
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
     networks:
       mgmt_net:
         ipv4_address: 10.10.2.11
@@ -97,7 +102,7 @@ services:
   mgmt2:
     image: alpine
     container_name: mgmt2
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
     networks:
       mgmt_net:
         ipv4_address: 10.10.2.12
@@ -109,7 +114,7 @@ services:
   eth1:
     image: alpine
     container_name: eth1
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
     networks:
       eth_net:
         ipv4_address: 10.10.3.11
@@ -121,7 +126,7 @@ services:
   eth2:
     image: alpine
     container_name: eth2
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
     networks:
       eth_net:
         ipv4_address: 10.10.3.12
@@ -133,19 +138,24 @@ services:
   core-server:
     image: nginx:alpine
     container_name: core-server
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./firewall-gw/init-routes.sh:/init-routes.sh
+    command: >
+      sh -c "
+        apk add --no-cache iputils traceroute libcap && 
+        sh /init-routes.sh && 
+        nginx -g 'daemon off;'
+      "
     networks:
       server_net:
         ipv4_address: 10.10.4.100
-    volumes:
-      - ./firewall-gw/init-routes.sh:/init-routes.sh
-    cap_add:
-      - NET_ADMIN
   
   internet:
     image: alpine
     container_name: internet
-    command: sh -c "apk add iputils traceroute libcap && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl && sh /init-routes.sh && sleep infinity"
     networks:
       int_net:
         ipv4_address: 10.10.5.11
@@ -183,8 +193,8 @@ networks:
 
 volumes:
     splunk_data:
-        driver: local
+      driver: local
     snort_logs:
-        driver: local
+      driver: local
     squid_logs:
       driver: local
