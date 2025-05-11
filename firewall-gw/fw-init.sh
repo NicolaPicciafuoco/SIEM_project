@@ -71,6 +71,10 @@ iptables -A FORWARD \
     -s 10.10.1.0/24 -d 10.10.4.0/24 \
     -p tcp -m multiport --dports 80,443,21 \
     -j ACCEPT
+# Guest → Server solo ping
+iptables -A FORWARD \
+    -s 10.10.1.0/24 -d 10.10.4.0/24 \
+    -p icmp --icmp-type echo-request -j ACCEPT
 # blocca tutto il resto da Guest
 iptables -A FORWARD -s 10.10.1.0/24 -j REJECT
 
@@ -80,6 +84,11 @@ iptables -A FORWARD \
     -s 10.10.2.0/24 -d 10.10.4.0/24 \
     -p tcp -m multiport --dports 80,443,21 \
     -j ACCEPT
+# Mgmt → Server solo ping
+iptables -A FORWARD \
+    -s 10.10.2.0/24 -d 10.10.4.0/24 \
+    -p icmp --icmp-type echo-request -j ACCEPT
+# Blocca tutto il resto da Mgmt
 iptables -A FORWARD -s 10.10.2.0/24 -j REJECT
 
 # ——— Ethernet_net (10.10.3.0/24) ———
@@ -88,13 +97,15 @@ iptables -A FORWARD \
     -s 10.10.3.0/24 -d 10.10.4.0/24 \
     -p tcp -m multiport --dports 80,443,21 \
     -j ACCEPT
-
-# Eth → Guest e Mgmt solo ping
+# Eth → Guest e Mgmt e Server solo ping
 iptables -A FORWARD \
     -s 10.10.3.0/24 -d 10.10.1.0/24 \
     -p icmp --icmp-type echo-request -j ACCEPT
 iptables -A FORWARD \
     -s 10.10.3.0/24 -d 10.10.2.0/24 \
+    -p icmp --icmp-type echo-request -j ACCEPT
+iptables -A FORWARD \
+    -s 10.10.3.0/24 -d 10.10.4.0/24 \
     -p icmp --icmp-type echo-request -j ACCEPT
 # blocca tutto il resto da Eth
 iptables -A FORWARD -s 10.10.3.0/24 -j REJECT
@@ -105,6 +116,10 @@ iptables -A FORWARD \
     -s 10.10.5.0/24 -d 10.10.4.0/24 \
     -p tcp -m multiport --dports 80,443,21 \
     -j ACCEPT
+# Internet → Server solo ping
+iptables -A FORWARD \
+    -s 10.10.5.0/24 -d 10.10.4.0/24 \
+    -p icmp --icmp-type echo-request -j ACCEPT
 # blocca tutto il resto da Internet
 iptables -A FORWARD -s 10.10.5.0/24 -j REJECT
 
