@@ -124,7 +124,8 @@ database.sql
 database.sql.zip
 error_log
 access_log
-
+../
+..%2f
 wp-admin # WordPress
 wp-login.php # WordPress
 administrator # Joomla
