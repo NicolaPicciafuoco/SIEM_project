@@ -132,6 +132,4 @@ rsyslogd -n &
 # Crea cartella dei log di Snort
 mkdir -p /var/log/snort
 # Avvia Snort (continua a girare)
-exec snort -c /etc/snort/snort.conf \
-    -i guest0 -i mgmt0 -i eth0 -i server0 -i int0 \
-    -l /var/log/snort
+exec snort -c /etc/snort/snort.conf -l /var/log/snort

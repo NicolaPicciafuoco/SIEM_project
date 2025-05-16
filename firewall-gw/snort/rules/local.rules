@@ -1,118 +1,62 @@
 # =============================================================================
-# --- Sezione Regole Snort: Attacchi da Rete Guest ($GUEST_NET) verso $SERVER_NET
+# --- Sezione Regole Snort Personalizzate - Set Semplificato ---
+# File: /etc/snort/rules/local.rules
+# Basato sulla configurazione snort.conf con http_inspect DISABILITATO.
+# Queste regole si concentrano unicamente su scansioni di base e violazioni
+# di policy sulle porte non gestite da Squid (non 80, 443, 21), oltre a UDP e ICMP.
 # =============================================================================
 
-#  Rilevamento Scansioni Generiche e Violazioni di Policy (non-80/443/21, UDP, ICMP)
-# Intercetta traffico di scansione su porte non permesse (Nmap su porte diverse da 80/443/21) e tutto il traffico UDP/ICMP.
+# ***********************************
+# Regole per Attacchi da Rete Guest ($GUEST_NET) verso $SERVER_NET
+# Priorità: Scan Porte/UDP = 2, ICMP = 4
+# ***********************************
 
-# POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21) verso Server Net
+# POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
 alert tcp $GUEST_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Guest Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000100; rev:1; priority:2;)
 
-# POLICY VIOLATION/SCAN: Tentativo UDP verso Server Net
+# POLICY VIOLATION/SCAN: Tentativo UDP
 alert udp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting UDP scan to Server Network"; sid:2000101; rev:1; priority:2;)
 
-# POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan) verso Server Net
+# POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
 alert icmp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting ICMP scan/ping to Server Network"; sid:2000102; rev:1; priority:4;)
-
-# --- Rilevamento Tecniche di Scansione Avanzate (TCP Flags, IP Frag) - Priorità 2/3 ---
-
-# SCAN DETECT: TCP Null Scan (ACK, RST, SYN, FIN, PSH, URG flags are OFF)
-alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000150; rev:1; priority:2;)
-
-# SCAN DETECT: TCP FIN Scan (Only FIN flag is ON)
-# T_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000151; rev:1; priority:2;)
-
-# SCAN DETECT: TCP Xmas Scan (FIN, PSH, URG flags are ON)
-
-alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000152; rev:1; priority:2;)
-
-# SCAN DETECT: TCP SYN/ACK Scan (Often used to probe for firewalls/rule sets)
-# alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000153; rev:1; priority:3;)
-
-# SCAN DETECT: Fragmented IP traffic (often used for evasion)
-# Rileva pacchetti IP frammentati.
-alert ip $GUEST_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Guest Network sending fragmented IP traffic"; fragbits:M; sid:2000160; rev:1; priority:2;)
-# alert ip $GUEST_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Guest Network sending non-initial fragmented IP traffic"; fragbits:any, !M; sid:2000161; rev:1; priority:2;)
 
 
 # ***********************************
 # Regole per Attacchi da Rete Internet ($INT_NET) verso $SERVER_NET
-# (Range SID: 2000200 - 2000299)
+# Priorità: Scan Porte/UDP = 2, ICMP = 3
 # ***********************************
 
 # POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
-# Gravità: 2 (come richiesto, stessa gravità di Guest per scan porte)
 alert tcp $INT_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Internet Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000200; rev:1; priority:2;)
 
 # POLICY VIOLATION/SCAN: Tentativo UDP
-# Gravità: 2 (come Guest)
 alert udp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting UDP scan to Server Network"; sid:2000201; rev:1; priority:2;)
 
 # POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
-# Gravità: 3 (come richiesto)
 alert icmp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting ICMP scan/ping to Server Network"; sid:2000202; rev:1; priority:3;)
-
-# Aggiungiamo anche qui le regole per TCP Flags e IP Frag. Priorità mantenuta a 2/3.
-# SCAN DETECT: TCP Null Scan
-alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000250; rev:1; priority:2;)
-
-# SCAN DETECT: TCP FIN Scan
-#alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000251; rev:1; priority:2;)
-
-# SCAN DETECT: TCP Xmas Scan
-alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000252; rev:1; priority:2;)
-
-# SCAN DETECT: TCP ACK Scan (Potenziali falsi positivi, priorità leggermente più bassa)
-# alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000253; rev:1; priority:3;)
-
-# SCAN/ATTACK: Frammentazione IP
-alert ip $INT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Internet Network sending fragmented IP traffic (M flag)"; fragbits:M; sid:2000260; rev:1; priority:2;)
-# alert ip $INT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Internet Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000261; rev:1; priority:2;)
-
 
 
 # ***********************************
 # Regole per Attacchi da Rete Ethernet ($ETH_NET) verso $SERVER_NET
-# (Range SID: 2000300 - 2000399)
+# Priorità: Scan Porte/UDP/ICMP = 4 (Fiducia alta)
 # ***********************************
 
 # POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
-# Gravità: 4 (come richiesto)
 alert tcp $ETH_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Ethernet Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000300; rev:1; priority:4;)
 
 # POLICY VIOLATION/SCAN: Tentativo UDP
-# Gravità: 4 (come richiesto)
 alert udp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting UDP scan to Server Network"; sid:2000301; rev:1; priority:4;)
 
 # POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
-# Gravità: 4 (come richiesto)
 alert icmp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting ICMP scan/ping to Server Network"; sid:2000302; rev:1; priority:4;)
-
-# Anche qui le regole per TCP Flags e IP Frag, con priorità 4 data l'alta fiducia nella rete.
-# SCAN DETECT: TCP Null Scan
-alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000350; rev:1; priority:4;)
-
-# SCAN DETECT: TCP FIN Scan
-# alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000351; rev:1; priority:4;)
-
-# SCAN DETECT: TCP Xmas Scan
-alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000352; rev:1; priority:4;)
-
-# SCAN DETECT: TCP ACK Scan
-# alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000353; rev:1; priority:4;)
-
-# SCAN/ATTACK: Frammentazione IP
-alert ip $ETH_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Ethernet Network sending fragmented IP traffic (M flag)"; fragbits:M; sid:2000360; rev:1; priority:4;)
-# alert ip $ETH_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Ethernet Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000361; rev:1; priority:4;)
 
 
 # ***********************************
 # Regole per Attacchi da Rete Management ($MGMT_NET) verso $SERVER_NET
-# (Range SID: 2000400 - 2000499)
+# Priorità: Scan Porte/UDP/ICMP = 4 (Fiducia leggermente inferiore a Ethernet, ma comunque bassa priorità per queste scansioni di base)
 # ***********************************
 
 # POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
-
 alert tcp $MGMT_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Management Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000400; rev:1; priority:4;)
 
 # POLICY VIOLATION/SCAN: Tentativo UDP
@@ -120,19 +64,3 @@ alert udp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network
 
 # POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
 alert icmp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting ICMP scan/ping to Server Network"; sid:2000402; rev:1; priority:4;)
-
-# Anche qui le regole per TCP Flags e IP Frag, con priorità 4.
-alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000450; rev:1; priority:3;)
-
-# SCAN DETECT: TCP FIN Scan
-# alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000451; rev:1; priority:3;)
-
-# SCAN DETECT: TCP Xmas Scan
-alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000452; rev:1; priority:3;)
-
-# SCAN DETECT: TCP ACK Scan
-# alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000453; rev:1; priority:3;)
-
-# SCAN/ATTACK: Frammentazione IP
-alert ip $MGMT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Management Network sending fragmented IP traffic (M flag)"; fragbits:M; sid:2000460; rev:1; priority:3;)
-# alert ip $MGMT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Management Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000461; rev:1; priority:3;)
