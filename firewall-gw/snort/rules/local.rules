@@ -17,22 +17,22 @@ alert icmp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network at
 # --- Rilevamento Tecniche di Scansione Avanzate (TCP Flags, IP Frag) - Priorità 2/3 ---
 
 # SCAN DETECT: TCP Null Scan (ACK, RST, SYN, FIN, PSH, URG flags are OFF)
-alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP Null Scan"; flow:to_server; tcpflags:!SRAFCUP; sid:2000150; rev:1; priority:2;)
+alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000150; rev:1; priority:2;)
 
 # SCAN DETECT: TCP FIN Scan (Only FIN flag is ON)
-T_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP FIN Scan"; flow:to_server; tcpflags:F,only; sid:2000151; rev:1; priority:2;)
+# T_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000151; rev:1; priority:2;)
 
 # SCAN DETECT: TCP Xmas Scan (FIN, PSH, URG flags are ON)
 
-alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP Xmas Scan"; flow:to_server; tcpflags:FPU; sid:2000152; rev:1; priority:2;)
+alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000152; rev:1; priority:2;)
 
 # SCAN DETECT: TCP SYN/ACK Scan (Often used to probe for firewalls/rule sets)
-alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP ACK Scan"; flow:to_server; tcpflags:A,only; sid:2000153; rev:1; priority:3;)
+# alert tcp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000153; rev:1; priority:3;)
 
 # SCAN DETECT: Fragmented IP traffic (often used for evasion)
 # Rileva pacchetti IP frammentati.
 alert ip $GUEST_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Guest Network sending fragmented IP traffic"; fragbits:M; sid:2000160; rev:1; priority:2;)
-alert ip $GUEST_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Guest Network sending non-initial fragmented IP traffic"; fragbits:any, !M; sid:2000161; rev:1; priority:2;)
+# alert ip $GUEST_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Guest Network sending non-initial fragmented IP traffic"; fragbits:any, !M; sid:2000161; rev:1; priority:2;)
 
 
 # ***********************************
@@ -54,20 +54,20 @@ alert icmp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network a
 
 # Aggiungiamo anche qui le regole per TCP Flags e IP Frag. Priorità mantenuta a 2/3.
 # SCAN DETECT: TCP Null Scan
-alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP Null Scan"; flow:to_server; tcpflags:!SRAFCUP; sid:2000250; rev:1; priority:2;)
+alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000250; rev:1; priority:2;)
 
 # SCAN DETECT: TCP FIN Scan
-alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP FIN Scan"; flow:to_server; tcpflags:F,only; sid:2000251; rev:1; priority:2;)
+#alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000251; rev:1; priority:2;)
 
 # SCAN DETECT: TCP Xmas Scan
-alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP Xmas Scan"; flow:to_server; tcpflags:FPU; sid:2000252; rev:1; priority:2;)
+alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000252; rev:1; priority:2;)
 
 # SCAN DETECT: TCP ACK Scan (Potenziali falsi positivi, priorità leggermente più bassa)
-alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP ACK Scan"; flow:to_server; tcpflags:A,only; sid:2000253; rev:1; priority:3;)
+# alert tcp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000253; rev:1; priority:3;)
 
 # SCAN/ATTACK: Frammentazione IP
 alert ip $INT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Internet Network sending fragmented IP traffic (M flag)"; fragbits:M; sid:2000260; rev:1; priority:2;)
-alert ip $INT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Internet Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000261; rev:1; priority:2;)
+# alert ip $INT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Internet Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000261; rev:1; priority:2;)
 
 
 
@@ -90,20 +90,20 @@ alert icmp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network a
 
 # Anche qui le regole per TCP Flags e IP Frag, con priorità 4 data l'alta fiducia nella rete.
 # SCAN DETECT: TCP Null Scan
-alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP Null Scan"; flow:to_server; tcpflags:!SRAFCUP; sid:2000350; rev:1; priority:4;)
+alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000350; rev:1; priority:4;)
 
 # SCAN DETECT: TCP FIN Scan
-alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP FIN Scan"; flow:to_server; tcpflags:F,only; sid:2000351; rev:1; priority:4;)
+# alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000351; rev:1; priority:4;)
 
 # SCAN DETECT: TCP Xmas Scan
-alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP Xmas Scan"; flow:to_server; tcpflags:FPU; sid:2000352; rev:1; priority:4;)
+alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000352; rev:1; priority:4;)
 
 # SCAN DETECT: TCP ACK Scan
-alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP ACK Scan"; flow:to_server; tcpflags:A,only; sid:2000353; rev:1; priority:4;)
+# alert tcp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000353; rev:1; priority:4;)
 
 # SCAN/ATTACK: Frammentazione IP
 alert ip $ETH_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Ethernet Network sending fragmented IP traffic (M flag)"; fragbits:M; sid:2000360; rev:1; priority:4;)
-alert ip $ETH_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Ethernet Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000361; rev:1; priority:4;)
+# alert ip $ETH_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Ethernet Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000361; rev:1; priority:4;)
 
 
 # ***********************************
@@ -122,17 +122,17 @@ alert udp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network
 alert icmp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting ICMP scan/ping to Server Network"; sid:2000402; rev:1; priority:4;)
 
 # Anche qui le regole per TCP Flags e IP Frag, con priorità 4.
-alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP Null Scan"; flow:to_server; tcpflags:!SRAFCUP; sid:2000450; rev:1; priority:3;)
+alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP Null Scan"; flow:to_server; flags:!SRAFCUP; sid:2000450; rev:1; priority:3;)
 
 # SCAN DETECT: TCP FIN Scan
-alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP FIN Scan"; flow:to_server; tcpflags:F,only; sid:2000451; rev:1; priority:3;)
+# alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP FIN Scan"; flow:to_server; flags:F,only; sid:2000451; rev:1; priority:3;)
 
 # SCAN DETECT: TCP Xmas Scan
-alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP Xmas Scan"; flow:to_server; tcpflags:FPU; sid:2000452; rev:1; priority:3;)
+alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP Xmas Scan"; flow:to_server; flags:FPU; sid:2000452; rev:1; priority:3;)
 
 # SCAN DETECT: TCP ACK Scan
-alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP ACK Scan"; flow:to_server; tcpflags:A,only; sid:2000453; rev:1; priority:3;)
+# alert tcp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting TCP ACK Scan"; flow:to_server; flags:A,only; sid:2000453; rev:1; priority:3;)
 
 # SCAN/ATTACK: Frammentazione IP
 alert ip $MGMT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Management Network sending fragmented IP traffic (M flag)"; fragbits:M; sid:2000460; rev:1; priority:3;)
-alert ip $MGMT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Management Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000461; rev:1; priority:3;)
+# alert ip $MGMT_NET any -> $SERVER_NET any (msg:"SCAN/ATTACK: Management Network sending fragmented IP traffic (non-M flag)"; fragbits:any, !M; sid:2000461; rev:1; priority:3;)

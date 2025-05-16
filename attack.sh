@@ -2,7 +2,7 @@
 
 TARGET_SERVER_IP="10.10.4.100"
 
-ATTACKER_CONTAINERS=("guest1" "mgmt1" "eth1" "internet")
+ATTACKER_CONTAINERS=("mgmt1" "eth1" "internet")
 
 SCAN_SCRIPT_PATH="/attacker-scripts/scan_dirs.sh"
 
