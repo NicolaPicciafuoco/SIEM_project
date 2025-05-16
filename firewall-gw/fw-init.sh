@@ -132,4 +132,10 @@ rsyslogd -n &
 # Crea cartella dei log di Snort
 mkdir -p /var/log/snort
 # Avvia Snort (continua a girare)
-exec snort -c /etc/snort/snort.conf -l /var/log/snort
+snort -A fast -c /etc/snort/snort.conf -i guest0  -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i mgmt0   -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i eth0    -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i server0 -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i int0    -l /var/log/snort &
+
+wait  # mantiene il container attivo
