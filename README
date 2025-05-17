@@ -20,9 +20,15 @@
   - Internet: solo Server
 - Passo 2
   - Ampliare iptables, snort e squid in base alle policy
+  - Raffinare le regole in local.rules di snort, in base alle policy. Preparare le rule options. (siamo qui)
+  - Finire squid
+  - Revisione di IpTables.
   - ...
 - Passo 3
   - Definire metrica di valutazione punti per la fiducia (*Splunk?*)
+  - Definire il PDP e il PEP
+  - Testare
+  - Relazione
   - ...
 
 ## Commit

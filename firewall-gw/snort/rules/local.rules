@@ -1,16 +1,66 @@
 # =============================================================================
-# --- Sezione Regole Snort: Attacchi da Rete Guest ($GUEST_NET) verso $SERVER_NET
+# --- Sezione Regole Snort Personalizzate - Set Semplificato ---
+# File: /etc/snort/rules/local.rules
+# Basato sulla configurazione snort.conf con http_inspect DISABILITATO.
+# Queste regole si concentrano unicamente su scansioni di base e violazioni
+# di policy sulle porte non gestite da Squid (non 80, 443, 21), oltre a UDP e ICMP.
 # =============================================================================
 
-#  Rilevamento Scansioni Generiche
-# Intercetta traffico di scansione su porte non permesse (Nmap su porte diverse da 80/443/21) e tutto il traffico UDP/ICMP.
+# ***********************************
+# Regole per Attacchi da Rete Guest ($GUEST_NET) verso $SERVER_NET
+# Priorità: Scan Porte/UDP = 2, ICMP = 4
+# ***********************************
 
-# POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21) verso Server Net
+# POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
 alert tcp $GUEST_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Guest Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000100; rev:1; priority:2;)
 
-# POLICY VIOLATION/SCAN: Tentativo UDP verso Server Net
+# POLICY VIOLATION/SCAN: Tentativo UDP
 alert udp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting UDP scan to Server Network"; sid:2000101; rev:1; priority:2;)
 
-# POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan) verso Server Net
+# POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
 alert icmp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting ICMP scan/ping to Server Network"; sid:2000102; rev:1; priority:4;)
 
+
+# ***********************************
+# Regole per Attacchi da Rete Internet ($INT_NET) verso $SERVER_NET
+# Priorità: Scan Porte/UDP = 2, ICMP = 3
+# ***********************************
+
+# POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
+alert tcp $INT_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Internet Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000200; rev:1; priority:2;)
+
+# POLICY VIOLATION/SCAN: Tentativo UDP
+alert udp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting UDP scan to Server Network"; sid:2000201; rev:1; priority:2;)
+
+# POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
+alert icmp $INT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Internet Network attempting ICMP scan/ping to Server Network"; sid:2000202; rev:1; priority:3;)
+
+
+# ***********************************
+# Regole per Attacchi da Rete Ethernet ($ETH_NET) verso $SERVER_NET
+# Priorità: Scan Porte/UDP/ICMP = 4 (Fiducia alta)
+# ***********************************
+
+# POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
+alert tcp $ETH_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Ethernet Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000300; rev:1; priority:4;)
+
+# POLICY VIOLATION/SCAN: Tentativo UDP
+alert udp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting UDP scan to Server Network"; sid:2000301; rev:1; priority:4;)
+
+# POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
+alert icmp $ETH_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Ethernet Network attempting ICMP scan/ping to Server Network"; sid:2000302; rev:1; priority:4;)
+
+
+# ***********************************
+# Regole per Attacchi da Rete Management ($MGMT_NET) verso $SERVER_NET
+# Priorità: Scan Porte/UDP/ICMP = 4 (Fiducia leggermente inferiore a Ethernet, ma comunque bassa priorità per queste scansioni di base)
+# ***********************************
+
+# POLICY VIOLATION/SCAN: Tentativo TCP su porte non standard (non-80/443/21)
+alert tcp $MGMT_NET any -> $SERVER_NET ![80,443,21] (msg:"SCAN DETECT: Management Network attempting non-HTTP/HTTPS/FTP TCP scan to Server Network"; sid:2000400; rev:1; priority:4;)
+
+# POLICY VIOLATION/SCAN: Tentativo UDP
+alert udp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting UDP scan to Server Network"; sid:2000401; rev:1; priority:4;)
+
+# POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
+alert icmp $MGMT_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Management Network attempting ICMP scan/ping to Server Network"; sid:2000402; rev:1; priority:4;)
