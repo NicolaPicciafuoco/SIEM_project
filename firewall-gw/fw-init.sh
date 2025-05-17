@@ -75,6 +75,8 @@ iptables -A FORWARD \
 iptables -A FORWARD \
     -s 10.10.1.0/24 -d 10.10.4.0/24 \
     -p icmp --icmp-type echo-request -j ACCEPT
+# Guest → Server: Postgres
+iptables -A FORWARD -s 10.10.1.0/24 -d 10.10.4.0/24 -p tcp --dport 5432 -j ACCEPT
 # blocca tutto il resto da Guest
 iptables -A FORWARD -s 10.10.1.0/24 -j REJECT
 
@@ -88,6 +90,8 @@ iptables -A FORWARD \
 iptables -A FORWARD \
     -s 10.10.2.0/24 -d 10.10.4.0/24 \
     -p icmp --icmp-type echo-request -j ACCEPT
+# Mgmt → Server: Postgres
+iptables -A FORWARD -s 10.10.2.0/24 -d 10.10.4.0/24 -p tcp --dport 5432 -j ACCEPT
 # Blocca tutto il resto da Mgmt
 iptables -A FORWARD -s 10.10.2.0/24 -j REJECT
 
@@ -107,6 +111,8 @@ iptables -A FORWARD \
 iptables -A FORWARD \
     -s 10.10.3.0/24 -d 10.10.4.0/24 \
     -p icmp --icmp-type echo-request -j ACCEPT
+# Eth → Server: ora anche Postgres su 5432
+iptables -A FORWARD -s 10.10.3.0/24 -d 10.10.4.0/24 -p tcp --dport 5432 -j ACCEPT
 # blocca tutto il resto da Eth
 iptables -A FORWARD -s 10.10.3.0/24 -j REJECT
 
@@ -120,6 +126,8 @@ iptables -A FORWARD \
 iptables -A FORWARD \
     -s 10.10.5.0/24 -d 10.10.4.0/24 \
     -p icmp --icmp-type echo-request -j ACCEPT
+# Internet → Server: Postgres
+iptables -A FORWARD -s 10.10.5.0/24 -d 10.10.4.0/24 -p tcp --dport 5432 -j ACCEPT
 # blocca tutto il resto da Internet
 iptables -A FORWARD -s 10.10.5.0/24 -j REJECT
 
@@ -132,6 +140,10 @@ rsyslogd -n &
 # Crea cartella dei log di Snort
 mkdir -p /var/log/snort
 # Avvia Snort (continua a girare)
-exec snort -c /etc/snort/snort.conf \
-    -i guest0 -i mgmt0 -i eth0 -i server0 -i int0 \
-    -l /var/log/snort
+snort -A fast -c /etc/snort/snort.conf -i guest0  -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i mgmt0   -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i eth0    -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i server0 -l /var/log/snort &
+snort -A fast -c /etc/snort/snort.conf -i int0    -l /var/log/snort &
+
+wait  # mantiene il container attivo

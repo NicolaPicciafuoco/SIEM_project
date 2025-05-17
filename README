@@ -6,6 +6,8 @@
   - *./splunk restart*
 - Squid:
   - *`curl -x http://10.10.<2>.210:3128 -I <http://10.10.4.100>`*
+- Postgres
+  - PGPASSWORD='VeryStr0ngP@ss' psql -h 10.10.4.100 -U siem_user -d siem -c '\dt'
 
 ## TODO
 

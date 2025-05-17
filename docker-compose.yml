@@ -24,8 +24,11 @@ services:
       - ./firewall-gw/snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
       - ./firewall-gw/snort/rules:/etc/snort/rules  # Monta la cartella delle regole
       - squid_logs:/var/log/squid # Monta i log di Squid in sola lettura
+      - postgres_logs:/var/log/postgresql # Monta i log di PostgreSQL in sola lettura
     # command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
     # command: ["sh", "-c", "mkdir -p /var/log/snort && touch /var/log/snort/snort.log && service rsyslog start && snort -c /etc/snort/snort.conf -i any -l /var/log/snort"]
+    depends_on:
+      - core-server
 
 
   splunk:
@@ -42,10 +45,13 @@ services:
       - splunk_data:/opt/splunk/var
       - snort_logs:/var/log/snort
       - squid_logs:/var/log/squid
+      - postgres_logs:/var/log/postgresql
     #  - ./splunk:/opt/splunk/etc/system/local
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
+    depends_on:
+      - firewall  # Assicurati che il firewall sia avviato prima di Splunk
     
   squid:
     image: sameersbn/squid:latest
@@ -66,7 +72,7 @@ services:
   guest1:
     image: alpine
     container_name: guest1
-    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra netcat-openbsd postgresql-client && sh /init-routes.sh && sleep infinity"
     networks:
       guest_net:
         ipv4_address: 10.10.1.11
@@ -79,7 +85,7 @@ services:
   guest2:
     image: alpine
     container_name: guest2
-    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra netcat-openbsd postgresql-client && sh /init-routes.sh && sleep infinity"
     networks:
       guest_net:
         ipv4_address: 10.10.1.12
@@ -92,7 +98,7 @@ services:
   mgmt1:
     image: alpine
     container_name: mgmt1
-    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra netcat-openbsd postgresql-client && sh /init-routes.sh && sleep infinity"
     networks:
       mgmt_net:
         ipv4_address: 10.10.2.11
@@ -105,7 +111,7 @@ services:
   mgmt2:
     image: alpine
     container_name: mgmt2
-    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra netcat-openbsd postgresql-client && sh /init-routes.sh && sleep infinity"
     networks:
       mgmt_net:
         ipv4_address: 10.10.2.12
@@ -118,7 +124,7 @@ services:
   eth1:
     image: alpine
     container_name: eth1
-    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra netcat-openbsd postgresql-client && sh /init-routes.sh && sleep infinity"
     networks:
       eth_net:
         ipv4_address: 10.10.3.11
@@ -131,7 +137,7 @@ services:
   eth2:
     image: alpine
     container_name: eth2
-    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra netcat-openbsd postgresql-client && sh /init-routes.sh && sleep infinity"
     networks:
       eth_net:
         ipv4_address: 10.10.3.12
@@ -148,6 +154,7 @@ services:
       - NET_ADMIN
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh     # le tue rotte
+      - postgres_logs:/var/log/postgresql
     networks:
       server_net:
         ipv4_address: 10.10.4.100
@@ -157,7 +164,7 @@ services:
   internet:
     image: alpine
     container_name: internet
-    command: sh -c "apk add iputils traceroute libcap curl nmap hydra && sh /init-routes.sh && sleep infinity"
+    command: sh -c "apk add iputils traceroute libcap curl nmap hydra netcat-openbsd postgresql-client && sh /init-routes.sh && sleep infinity"
     networks:
       int_net:
         ipv4_address: 10.10.5.11
@@ -200,4 +207,6 @@ volumes:
     snort_logs:
       driver: local
     squid_logs:
+      driver: local
+    postgres_logs:
       driver: local
