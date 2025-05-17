@@ -3,9 +3,9 @@ FROM nginx:alpine
 
 # 1) Installa tool di rete, Postgres e su-exec
 RUN apk add --no-cache \
-      iputils traceroute libcap \
-      postgresql postgresql-contrib \
-      su-exec
+    iputils traceroute libcap \
+    postgresql postgresql-contrib \
+    su-exec
 
 # 2) Imposta variabili ambiente per Postgres
 ENV PGDATA=/var/lib/postgresql/data \
@@ -18,9 +18,8 @@ COPY db_init /docker-entrypoint-initdb.d
 # init-routes.sh lo monteremo via volume nel docker-compose
 
 RUN mkdir -p /var/log/postgresql && \
-chown root:root /var/log/postgresql && \
 chown postgres:postgres /var/log/postgresql && \
-chmod 744 /var/log/postgresql
+chmod 755 /var/log/postgresql
 
 RUN chmod +x /start.sh
 

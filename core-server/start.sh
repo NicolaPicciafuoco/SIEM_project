@@ -6,7 +6,7 @@ sh /init-routes.sh
 
 # 1.a) Prepara la directory di log esterna e assegna ownership
 #chown postgres:postgres /var/log/postgresql
-#chmod 744 /var/log/postgresql
+#chmod 755 /var/log/postgresql
 
 # 2) Prepara la directory dati di Postgres
 mkdir -p "$PGDATA"
@@ -46,6 +46,9 @@ log_truncate_on_rotation = on
 log_rotation_size = 1024MB
 # (opzionale) ruota almeno ogni 1 giorno
 log_rotation_age = 1d
+
+# Imposta i permessi dei file di log a 0644 (rw-r--r--)
+log_file_mode = 0644
 
 # ————— Prefisso di log con timestamp, PID, utente@db, client e PRIORITY
 log_line_prefix = '%m [%p] %u@%d %r [PRIORITY:3] '
