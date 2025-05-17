@@ -6,6 +6,8 @@
 # di policy sulle porte non gestite da Squid (non 80, 443, 21), oltre a UDP e ICMP.
 # =============================================================================
 
+# alert ip any any -> any any (msg:"Trovato traffico IP"; sid:1000001; rev:1;)
+
 # ***********************************
 # Regole per Attacchi da Rete Guest ($GUEST_NET) verso $SERVER_NET
 # Priorità: Scan Porte/UDP = 2, ICMP = 4
@@ -20,6 +22,7 @@ alert udp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network att
 # POLICY VIOLATION/SCAN: Tentativo ICMP (Ping/Scan)
 alert icmp $GUEST_NET any -> $SERVER_NET any (msg:"SCAN DETECT: Guest Network attempting ICMP scan/ping to Server Network"; sid:2000102; rev:1; priority:4;)
 
+# alert icmp $SERVER_NET any -> $GUEST_NET any (msg:"SCAN DETECT: Server Network attempting ICMP scan/ping to respond Guest Network "; sid:2000103; rev:1; priority:4;)
 
 # ***********************************
 # Regole per Attacchi da Rete Internet ($INT_NET) verso $SERVER_NET
