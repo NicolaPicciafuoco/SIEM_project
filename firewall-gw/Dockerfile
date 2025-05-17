@@ -19,8 +19,7 @@ RUN apt-get update \
         ca-certificates \
         python3 \
         python3-pip \
-        ipset \
-    && python3 -m pip install flask
+        ipset
 
 
 # Copiamo lo script fw-init.sh e init-routes.sh nella cartella /usr/local/bin
@@ -51,12 +50,13 @@ RUN mkdir -p /var/log/squid && \
     chown root:root /var/log/squid && \
     chmod 755 /var/log/squid
 
+# PDP Setup
+
+COPY pdp.py /usr/local/bin/
+
 # Abilitiamo l’entrypoint
 ENTRYPOINT ["/usr/local/bin/fw-init.sh"]
 # # CMD ["sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0"]
 # CMD ["sh", "-c", "/usr/local/bin/fw-init.sh && service rsyslog start && snort -c /etc/snort/snort.conf -i eth0"]
 
-# PDP Setup
 
-COPY pdp.py /usr/local/bin/
-CMD ["sh", "-c", "snort -c /etc/snort/snort.conf -i any & python3 /usr/local/bin/pdp.py"]

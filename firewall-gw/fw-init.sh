@@ -126,6 +126,11 @@ iptables -A FORWARD -s 10.10.5.0/24 -j REJECT
 # 11) # NAT per permettere routing
 iptables -t nat -A POSTROUTING -s 10.10.5.0/24 -o int0 -j MASQUERADE
 
+# Blacklist
+
+ipset create PDP_BLACKLIST hash:ip
+iptables -I FORWARD 1 -m set --match-set PDP_BLACKLIST src -j DROP
+
 # 12) Avvio servizi di logging e Snort
 # Avvia rsyslog in foreground
 rsyslogd -n &
@@ -138,4 +143,8 @@ snort -A fast -c /etc/snort/snort.conf -i eth0    -l /var/log/snort &
 snort -A fast -c /etc/snort/snort.conf -i server0 -l /var/log/snort &
 snort -A fast -c /etc/snort/snort.conf -i int0    -l /var/log/snort &
 
-wait  # mantiene il container attivo
+# Avvia PDP in background
+python3 /usr/local/bin/pdp.py &
+
+
+ wait  # mantiene il container attivo

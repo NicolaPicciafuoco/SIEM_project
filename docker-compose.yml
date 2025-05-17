@@ -24,7 +24,7 @@ services:
       - ./firewall-gw/snort/snort.conf:/etc/snort/snort.conf  # File di configurazione per Snort
       - ./firewall-gw/snort/rules:/etc/snort/rules  # Monta la cartella delle regole
       - squid_logs:/var/log/squid # Monta i log di Squid in sola lettura
-      - squid_blacklist:/etc/squid/blocked_ips.txt
+      - squid_blacklist:/etc/squid
       - pdp_logs:/var/log
     # command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
     # command: ["sh", "-c", "mkdir -p /var/log/snort && touch /var/log/snort/snort.log && service rsyslog start && snort -c /etc/snort/snort.conf -i any -l /var/log/snort"]
@@ -62,7 +62,7 @@ services:
     volumes:
       - squid_logs:/var/log/squid      # log di Squid
       - ./squid/squid.conf:/etc/squid/squid.conf # File di configurazione di Squid
-      - squid_blacklist:/etc/squid/blocked_ips.txt # File di blacklist
+      - squid_blacklist:/etc/squid # File di blacklist
     network_mode: "service:firewall"
     depends_on:
       - firewall  # Assicurati che il firewall sia avviato prima di Squid
