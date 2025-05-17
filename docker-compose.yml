@@ -47,6 +47,7 @@ services:
       - splunk_data:/opt/splunk/var
       - snort_logs:/var/log/snort
       - squid_logs:/var/log/squid
+      - postgres_logs:/var/log/postgresql
       - pdp_logs:/var/log
     #  - ./splunk:/opt/splunk/etc/system/local
     networks:
@@ -210,6 +211,8 @@ volumes:
     snort_logs:
       driver: local
     squid_logs:
+      driver: local
+    postgres_logs:
       driver: local
     squid_blacklist:
       driver: local
