@@ -7,25 +7,26 @@
 - Squid:
   - *`curl -x http://10.10.<2>.210:3128 -I <http://10.10.4.100>`*
 - Postgres
-  - PGPASSWORD='VeryStr0ngP@ss' psql -h 10.10.4.100 -U siem_user -d siem -c '\dt'
+  - *`PGPASSWORD='VeryStr0ngP@ss' psql -h 10.10.4.100 -U siem_user -d siem -c '\dt'`*: comando per visualizzare il db e poi interrompre la connessione
+  - *`psql -h 10.10.4.100 -p 5432 -U siem_reader -d siem`*: comando per accedere al db e mantenere la connessione
 
 ## TODO
 
 - Passo 1
-  - Tutto deve passare per il firewall
-  - Tutti possono raggiunger il SERVER tramite solo i protocolli controllati da squid (HTTP, HTTPS, FTP)
-  - Guest: solo nodi fratelli e Server
-  - Management: solo nodi fratelli e Server
-  - Ethernet: solo nodi fratelli e Server e solo PINGARE Guest e Management 
-  - Internet: solo Server
+  - Tutto deve passare per il firewall                                                                   FATTO
+  - Tutti possono raggiunger il SERVER tramite solo i protocolli controllati da squid (HTTP, HTTPS, FTP) FATTO
+  - Guest: solo nodi fratelli e Server                                                                   FATTO
+  - Management: solo nodi fratelli e Server                                                              FATTO
+  - Ethernet: solo nodi fratelli e Server e solo PINGARE Guest e Management                              FATTO
+  - Internet: solo Server                                                                                FATTO
 - Passo 2
   - Ampliare iptables, snort e squid in base alle policy
   - Raffinare le regole in local.rules di snort, in base alle policy. Preparare le rule options. (siamo qui)
-  - Finire squid
+  - Finire squid -> Stabile livelli di gravità 1-4
   - Revisione di IpTables.
   - ...
 - Passo 3
-  - Definire metrica di valutazione punti per la fiducia (*Splunk?*)
+  - Definire metrica di valutazione punti per la fiducia (*Splunk?*) 
   - Definire il PDP e il PEP
   - Testare
   - Relazione

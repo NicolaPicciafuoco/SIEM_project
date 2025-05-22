@@ -50,8 +50,8 @@ log_rotation_age = 1d
 # Imposta i permessi dei file di log a 0644 (rw-r--r--)
 log_file_mode = 0644
 
-# ————— Prefisso di log con timestamp, PID, utente@db, client e PRIORITY
-log_line_prefix = '%m [%p] %u@%d %r [PRIORITY:3] '
+# ————— Prefisso di log con timestamp, PID, utente@db, client
+log_line_prefix = '%m [%p] %u@%d %r '
 
 # ————— Cosa loggare
 log_statement = 'ddl'
