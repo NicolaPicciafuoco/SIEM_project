@@ -7,7 +7,8 @@
 - Squid:
   - *`curl -x http://10.10.<2>.210:3128 -I <http://10.10.4.100>`*
 - Postgres
-  - *`PGPASSWORD='VeryStr0ngP@ss' psql -h 10.10.4.100 -U siem_user -d siem -c '\dt'`*
+  - *`PGPASSWORD='VeryStr0ngP@ss' psql -h 10.10.4.100 -U siem_user -d siem -c '\dt'`*: comando per visualizzare il db e poi interrompre la connessione
+  - *`psql -h 10.10.4.100 -p 5432 -U siem_reader -d siem`*: comando per accedere al db e mantenere la connessione
 
 ## TODO
 
