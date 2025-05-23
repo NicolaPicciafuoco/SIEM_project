@@ -19,6 +19,7 @@ RUN apt-get update \
         ca-certificates \
         python3 \
         python3-pip \
+        tcpdump \
         ipset
 
 
