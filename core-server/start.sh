@@ -54,7 +54,7 @@ log_file_mode = 0644
 log_line_prefix = '%m [%p] %u@%d %r '
 
 # ————— Cosa loggare
-log_statement = 'ddl'
+log_statement = 'all'
 log_min_duration_statement = 500
 log_connections = on
 log_disconnections = on
@@ -75,6 +75,9 @@ for f in /docker-entrypoint-initdb.d/*.sql; do
   echo "Initializing database with $f"
   su-exec postgres psql -f "$f"
 done
+
+# 9a) Avvia PHP-FPM in background
+php-fpm82
 
 # 9) Avvia Nginx in primo piano
 exec nginx -g 'daemon off;'

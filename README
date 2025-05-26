@@ -9,6 +9,8 @@
 - Postgres
   - *`PGPASSWORD='VeryStr0ngP@ss' psql -h 10.10.4.100 -U siem_user -d siem -c '\dt'`*: comando per visualizzare il db e poi interrompre la connessione
   - *`psql -h 10.10.4.100 -p 5432 -U siem_reader -d siem`*: comando per accedere al db e mantenere la connessione
+  - *`curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_reader" --data-urlencode "password=ReaderPassword0" --data-urlencode "query=SELECT * FROM public;"`*
+  - *`curl 'http://10.10.4.100/query?db=siem&user=siem_reader&password=ReaderPassword0&query=SELECT%20%2A%20FROM%20public`*
 
 ## TODO
 
