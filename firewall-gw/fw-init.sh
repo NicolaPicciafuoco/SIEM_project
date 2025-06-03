@@ -151,7 +151,4 @@ snort -A fast -c /etc/snort/snort.conf -i eth0    -l /var/log/snort &
 snort -A fast -c /etc/snort/snort.conf -i server0 -l /var/log/snort &
 snort -A fast -c /etc/snort/snort.conf -i int0    -l /var/log/snort &
 
-# Avvia PDP in background
-python3 /usr/local/bin/pdp.py &
-
 wait  # mantiene il container attivo

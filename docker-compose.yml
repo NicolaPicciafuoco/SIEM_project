@@ -32,7 +32,6 @@ services:
     depends_on:
       - core-server
 
-
   splunk:
     container_name: splunk
     build: ./splunk
@@ -43,6 +42,7 @@ services:
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
     ports:
       - "8000:8000"  # Interfaccia web Splunk
+      - "8089:8089"  # Porta endpoint REST API
     volumes:
       - splunk_data:/opt/splunk/var
       - snort_logs:/var/log/snort
@@ -56,6 +56,22 @@ services:
     depends_on:
       - firewall  # Assicurati che il firewall sia avviato prima di Splunk
     
+  policy_decision_point:
+    build: ./pdp
+    container_name: pdp
+    privileged: true
+    env_file:
+      - .env
+    networks:
+      eth_net:
+        ipv4_address: 10.10.3.111
+    depends_on:
+      splunk:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - pdp_logs:/var/log
+
   squid:
     image: sameersbn/squid:latest
     container_name: squid
