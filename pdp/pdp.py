@@ -2,9 +2,11 @@ import requests
 import json
 import time
 import re
-import subprocess
 import os
 import dotenv
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
 
 # Existing interface weights and scoring logic from your file
 INTERFACE_WEIGHTS = {
@@ -103,12 +105,25 @@ def calculate_trust(logs):
 def decide_for_ip(ip):
     logs = retrieve_logs(ip)
     score = calculate_trust(logs)
-    log_decision(ip, score, "ALLOW" if score >= 50 else "DENY")
-    return score
+    decision = "ALLOW" if score >= 50 else "DENY"
+    log_decision(ip, score, decision)
+    response = jsonify({
+        "source_ip": ip,
+        "score": score,
+        "decision": decision
+    }), 200 if decision == "ALLOW" else 403
+    return response
+
+@app.route('/decide', methods=['POST'])
+def decide():
+    """
+    PDP endpoint that receives requests from PEP
+    """
+    data = request.get_json()
+    source_ip = data.get('source_ip')
+    final_decision = decide_for_ip(source_ip)
+    return final_decision
+
 
 if __name__ == "__main__":
-    # Example usage
-    ip = "10.10.1.11"
-    score = decide_for_ip(ip)
-    while True:
-        time.sleep(5)
+     app.run(host='0.0.0.0', port=5001, debug=False)

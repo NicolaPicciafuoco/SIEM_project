@@ -131,13 +131,18 @@ iptables -A FORWARD \
 # blocca tutto il resto da Internet
 iptables -A FORWARD -s 10.10.5.0/24 -j REJECT
 
+# Da server a PEP (HTTP/HTTPS)
+iptables -A FORWARD -s 10.10.4.0/24 -d 10.10.3.0/24 -p tcp --dport 5000 -j ACCEPT
+iptables -A FORWARD -s 10.10.4.0/24 -d 10.10.3.0/24 -p icmp --icmp-type echo-request -j ACCEPT
+iptables -A FORWARD -s 10.10.4.0/24 -d 10.10.3.0/24 -p icmp --icmp-type echo-reply -j ACCEPT
+
+# Da PEP a server (HTTP/HTTPS)
+iptables -A FORWARD -s 10.10.3.222 -d 10.10.4.0/24 -p tcp -j ACCEPT
+iptables -A FORWARD -s 10.10.3.222 -d 10.10.4.0/24 -p icmp --icmp-type echo-request -j ACCEPT
+iptables -A FORWARD -s 10.10.3.222 -d 10.10.4.0/24 -p icmp --icmp-type echo-reply -j ACCEPT
+
 # 11) # NAT per permettere routing
 iptables -t nat -A POSTROUTING -s 10.10.5.0/24 -o int0 -j MASQUERADE
-
-# Blacklist
-
-ipset create PDP_BLACKLIST hash:ip
-iptables -I FORWARD 1 -m set --match-set PDP_BLACKLIST src -j DROP
 
 # 12) Avvio servizi di logging e Snort
 # Avvia rsyslog in foreground

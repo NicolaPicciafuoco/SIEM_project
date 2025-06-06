@@ -1,4 +1,4 @@
-# PDP Setup
+# PEP Setup
 
 FROM python:3.11-slim
 
@@ -10,10 +10,10 @@ RUN apt-get update && \
     python3 -m pip install --no-cache-dir dotenv && \
     python3 -m pip install --no-cache-dir flask
 
-COPY ./pdp.py /usr/local/bin/pdp.py
+COPY ./pep.py /usr/local/bin/pep.py
 COPY ./init-routes.sh /init-routes.sh
 
 RUN chmod +x /init-routes.sh
 RUN /init-routes.sh
 
-CMD ["python3", "-u", "/usr/local/bin/pdp.py"]
+CMD ["python3", "-u", "/usr/local/bin/pep.py"]

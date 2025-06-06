@@ -56,7 +56,7 @@ services:
     depends_on:
       - firewall  # Assicurati che il firewall sia avviato prima di Splunk
     
-  policy_decision_point:
+  pdp:
     build: ./pdp
     container_name: pdp
     privileged: true
@@ -71,6 +71,31 @@ services:
         restart: true
     volumes:
       - pdp_logs:/var/log
+    cap_add:
+      - NET_ADMIN
+
+# Solo il Signore Onnipotente sa perché il server si rifuta di comunicare col PEP sull'interfaccia ethernet quindi
+# gli diamo un interfaccia sulla rete del server, spero che Dio sia misericordioso con la mia anima e 
+# punisca i creatori di Docker 
+
+  pep:
+    build: ./pep
+    container_name: pep
+    privileged: true
+    env_file:
+      - .env
+    networks:
+      eth_net:
+        ipv4_address: 10.10.3.222
+      server_net:
+        ipv4_address: 10.10.4.222
+    depends_on:
+      pdp:
+        condition: service_started
+        restart: true
+    cap_add:
+      - NET_ADMIN
+
 
   squid:
     image: sameersbn/squid:latest
