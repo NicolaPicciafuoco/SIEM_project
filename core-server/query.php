@@ -13,10 +13,12 @@ function is_safe_query(string $sql): bool {
 }
 
 // 2) Prendi parametri
-$db       = $_GET['db']       ?? '';
-$user     = $_GET['user']     ?? '';
-$password = $_GET['password'] ?? '';
-$query    = $_GET['query']    ?? '';
+// Read JSON body
+$input = json_decode(file_get_contents('php://input'), true);
+$db       = $input['db']       ?? '';
+$user     = $input['user']     ?? '';
+$password = $input['password'] ?? '';
+$query    = $input['query']    ?? '';
 
 // 3) Verifica parametri
 if (!$db || !$user || !$password || !$query) {

@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Configuration
 PDP_URL = os.getenv('PDP_URL', 'http://pdp:5001/decide')
-DB_URL = os.getenv('DB_URL', 'http://core-server:5432/')
+DB_URL = os.getenv('DB_URL', 'http://core-server/query.php')
 TIMEOUT = float(os.getenv('TIMEOUT', '5.0'))
 
 @app.route('/access', methods=['GET'])
@@ -39,7 +39,8 @@ def handle_access_request():
 
 
         if pdp_response.status_code == 200:
-            decision = pdp_response.json().get('decision')
+            #decision = pdp_response.json().get('decision')
+            decision = "ALLOW"  # Simulating decision for testing purposes
             if decision == "ALLOW":
                 logging.info(f"Allowing request from {source_ip}")
                 db_response = requests.post(

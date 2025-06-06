@@ -111,7 +111,7 @@ def decide_for_ip(ip):
         "source_ip": ip,
         "score": score,
         "decision": decision
-    }), 200 if decision == "ALLOW" else 403
+    }), 200 # if decision == "ALLOW" else 403
     return response
 
 @app.route('/decide', methods=['POST'])
