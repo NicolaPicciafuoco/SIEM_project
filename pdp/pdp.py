@@ -49,7 +49,6 @@ def calculate_combined_score(ip):
         if prio_match:
             priority = int(prio_match.group(1))
             weight = INTERFACE_WEIGHTS.get(get_interface_weight(ip), 0.5)  # usa IP passato
-
             prio_weight = 5 - priority
             weighted_priority_sum += prio_weight * weight
             alert_counts += 1
@@ -162,7 +161,8 @@ def decide_for_ip(ip):
 @app.route('/decide', methods=['POST'])
 def decide():
     data = request.get_json()
-    source_ip = data.get('source_ip')
+    source_ip = data.get('source_ip', '')
+    source_ip = source_ip.split(',')[0].strip()
     response, status_code = decide_for_ip(source_ip)
 
     # Estraggo il json dai dati di risposta per stampare
