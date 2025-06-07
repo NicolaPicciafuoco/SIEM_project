@@ -162,7 +162,7 @@ def decide_for_ip(ip):
 def decide():
     data = request.get_json()
     source_ip = data.get('source_ip', '')
-    source_ip = source_ip.split(',')[0].strip()
+    #source_ip = source_ip.split(',')[0].strip()
     response, status_code = decide_for_ip(source_ip)
 
     # Estraggo il json dai dati di risposta per stampare

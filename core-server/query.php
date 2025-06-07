@@ -91,5 +91,5 @@ try {
     echo json_encode(['error' => $e->getMessage()]);
 } finally {
     $log_line = json_encode($log_entry) . PHP_EOL;
-    file_put_contents('/var/log/php/query_logs.txt', $log_line, FILE_APPEND);
+    file_put_contents('/var/log/queries/query_logs.txt', $log_line, FILE_APPEND);
 }
