@@ -25,7 +25,10 @@ COPY db_init /docker-entrypoint-initdb.d
 # init-routes.sh lo monteremo via volume nel docker-compose
 
 RUN mkdir -p /var/log/postgresql && \
+mkdir -p var/log/queries && \
 chown postgres:postgres /var/log/postgresql && \
+chown nobody:nobody /var/log/queries && \
+chmod 755 /var/log/queries && \
 chmod 755 /var/log/postgresql
 
 RUN chmod +x /start.sh
