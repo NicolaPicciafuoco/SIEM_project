@@ -39,8 +39,8 @@ def handle_access_request():
 
 
         if pdp_response.status_code == 200:
-            #decision = pdp_response.json().get('decision')
-            decision = "ALLOW"  # Simulating decision for testing purposes
+            decision = pdp_response.json().get('decision')
+            #decision = "ALLOW"  # Simulating decision for testing purposes
             if decision == "ALLOW":
                 logging.info(f"Allowing request from {source_ip}")
                 db_response = requests.post(
@@ -50,17 +50,19 @@ def handle_access_request():
                     timeout=TIMEOUT
                 )
                 return jsonify(db_response.json()), db_response.status_code
-                
-        elif pdp_response.status_code == 403:
-            logging.warning(f"Denying request from {source_ip}")
-            return jsonify({"error": "Access denied"}), 403
+            else:
+                logging.warning(f"Denying request from {source_ip}")
+                return jsonify({"error": "Access denied"}), 403 #non può entrareeee
+        # elif pdp_response.status_code == 403:
+        #     logging.warning(f"Denying request from {source_ip}")
+        #     return jsonify({"error": "Access denied"}), 403
         else:
             logging.error(f"Unexpected PDP response: {pdp_response.status_code}")
-            return jsonify({"error": "Policy service error"}), 500
+            return jsonify({"error": "Internal service error"}), 500
 
     except Exception as e:
         logging.error(f"Error processing request: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        return jsonify({"error": "Internal server error"}), 500 #internal error
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
