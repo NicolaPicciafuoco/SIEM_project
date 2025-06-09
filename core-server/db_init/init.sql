@@ -46,3 +46,8 @@ GRANT USAGE, SELECT
 
 -- 7) Privilegi per siem_reader (solo SELECT sulla tabella "public")
 --GRANT SELECT ON TABLE "public" TO siem_reader;
+INSERT INTO public (info) VALUES ('test log 1');
+INSERT INTO public (info) VALUES ('test log 2');
+
+INSERT INTO private (secret) VALUES ('test secret 1');
+INSERT INTO private (secret) VALUES ('test secret 2');
