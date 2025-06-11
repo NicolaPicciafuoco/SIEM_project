@@ -49,6 +49,7 @@ services:
       - squid_logs:/var/log/squid
       - postgres_logs:/var/log/postgresql
       - pdp_logs:/var/log
+      - query_logs:/var/log/queries
     #  - ./splunk:/opt/splunk/etc/system/local
     networks:
       eth_net:
@@ -200,6 +201,7 @@ services:
     volumes:
       - ./firewall-gw/init-routes.sh:/init-routes.sh     # le tue rotte
       - postgres_logs:/var/log/postgresql
+      - query_logs:/var/log/queries
     networks:
       server_net:
         ipv4_address: 10.10.4.100
@@ -258,4 +260,6 @@ volumes:
     squid_blacklist:
       driver: local
     pdp_logs: 
+      driver: local
+    query_logs:
       driver: local
