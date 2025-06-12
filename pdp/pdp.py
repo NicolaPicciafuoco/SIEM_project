@@ -10,12 +10,13 @@ app = Flask(__name__)
 
 # Existing interface weights and scoring logic from your file
 INTERFACE_WEIGHTS = {
-    'mgmt_net': 0.9,
-    'server_net': 0.8,
-    'eth_net': 0.5,
-    'guest_net': 0.3,
-    'int_net': 0.1
+    'mgmt_net': 1.0,
+    'server_net': 0.9,
+    'eth_net': 0.8,
+    'guest_net': 0.7,
+    'int_net': 0.6
 }
+
 def get_interface_weight(ip):
     if ip.startswith("10.10.1."):
         return INTERFACE_WEIGHTS['guest_net']
@@ -30,115 +31,67 @@ def get_interface_weight(ip):
     else:
         return 0.5  # peso default
 
-
-# def calculate_score(priority, interface):
-#     base_score = (priority - 1) * 25
-#     return int(base_score * INTERFACE_WEIGHTS.get(interface, 0.5))
-
 def calculate_combined_score(ip):
-    # snort_logs = retrieve_snort_logs(ip, limit=5)
-    # squid_logs = retrieve_squid_logs(ip, limit=5)
-    # pdp_logs = retrieve_pdp_logs(ip, limit=5)
-
-    # snort_score = 0
-    # alert_counts = 0
-    # weighted_priority_sum = 0
-    # for log in snort_logs:
-    #     raw = log.get('_raw', '')
-    #     prio_match = re.search(r'Priority:\s*(\d+)', raw)
-    #     if prio_match:
-    #         priority = int(prio_match.group(1))
-    #         weight = INTERFACE_WEIGHTS.get(get_interface_weight(ip), 0.5)  # usa IP passato
-    #         prio_weight = 5 - priority
-    #         weighted_priority_sum += prio_weight * weight
-    #         alert_counts += 1
-    # print(f"Snort score: {snort_score}, alert_counts: {alert_counts}, weighted_priority_sum: {weighted_priority_sum}")
-
-    # snort_score = min(5, max(1, int(weighted_priority_sum / alert_counts))) if alert_counts > 0 else 1
-    # print(f"Calculated Snort score for IP {ip}: {snort_score}")
-
-    # squid_score = 0
-    # weight = INTERFACE_WEIGHTS.get(get_interface_weight(ip), 0.5)
-    # for log in squid_logs:
-    #     raw = log.get('_raw', '')
-    #     if "TCP_MISS/200" in raw:
-    #         squid_score += 1 * weight
-    #     elif "TCP_DENIED" in raw or "TCP_FORBIDDEN" in raw:
-    #         squid_score -= 1 * weight
-    # print(f"Squid score before clamping: {squid_score}")
-    # squid_score = max(-5, min(5, int(squid_score)))
-    # print(f"Calculated Squid score for IP {ip}: {squid_score}")
-
-    # pdp_score = 0
-    # for log in pdp_logs:
-    #     raw = log.get('_raw', '')
-    #     if "PDP Decision: ALLOW" in raw:
-    #         pdp_score += 1
-    #     elif "PDP Decision: DENY" in raw:
-    #         pdp_score -= 1
-    # print(f"PDP score before clamping: {pdp_score}")
-    # pdp_score = max(-5, min(5, pdp_score))
-    # print(f"Calculated PDP score for IP {ip}: {pdp_score}")
-
-    # total_score = snort_score + squid_score + pdp_score
-    # print(f"Total score before clamping for IP {ip}: {total_score}")
-    # if total_score <= 1:
-    #     final_score = 1
-    # elif total_score >= 5:
-    #     final_score = 5
-    # else:
-    #     final_score = total_score
-
-    # print(f"Final score for IP {ip}: {final_score}")
-    # return final_score
-
+    base_score = 5.0
     snort_logs = retrieve_snort_logs(ip, limit=5)
     squid_logs = retrieve_squid_logs(ip, limit=5)
     pdp_logs = retrieve_pdp_logs(ip, limit=5)
     db_logs = retrieve_db_logs(ip, limit=5)
 
     snort_score = sum(1 for log in snort_logs if re.search(r'Priority:\s*(1|2)', log.get('_raw', '')))
-
-    squid_score = 0
+    print(f"Number of snort_logs: {len(snort_logs)}")
+    base_score -= snort_score
+    print(f"Base score after snort logs: {base_score} (Snort score: {snort_score})")
+    # squid_score = 0
+    print(f"Number of squid_logs: {len(squid_logs)}")
     for log in squid_logs:
         raw = log.get('_raw', '')
-        if "TCP_DENIED" in raw or "TCP_FORBIDDEN" in raw:
-            squid_score -= 1
+        if "TCP_DENIED/403" in raw or "TCP_FORBIDDEN/403" in raw:
+            base_score -= 1
         elif "TCP_MISS/200" in raw:
-            squid_score += 1
-
-    pdp_score = 0
+            base_score += 1
+    print(f"Base score after squid logs: {base_score}")
+    # pdp_score = 0
+    print(f"Number of pdp_logs: {len(pdp_logs)}")
     for log in pdp_logs:
         raw = log.get('_raw', '')
         if "PDP Decision: ALLOW" in raw:
-            pdp_score += 1
+            base_score += 1
         elif "PDP Decision: DENY" in raw:
-            pdp_score -= 1
-
+            base_score -= 1
+    print(f"Base score after PDP logs: {base_score}")
     # DB: penalizza se trovo tentativi di accesso falliti (ipotizziamo log con "DB Access DENIED")
-    db_score = 0
+    #db_score = 0
+    print(f"Number of db_logs: {len(db_logs)}")
     for log in db_logs:
         raw = log.get('_raw', '')
-        if "DB Access DENIED" in raw:
-            db_score -= 1
-        elif "DB Access ALLOWED" in raw:
-            db_score += 1
+        print(f"DB log raw: {raw}")
+        if "permission denied" in raw:
+            base_score -= 1
+            print("Detected DB Access DENIED, decreasing score")
+        elif '"error":null' in raw:
+            base_score += 1
+            print("Detected DB Access ALLOWED, increasing score")
 
+    print(f"Base score after db_logs: {base_score}")
     # Somma pesata, con pesi semplici e bilanciati
-    total_score = INTERFACE_WEIGHTS.get(get_interface_weight(ip), 0.5)*(snort_score + squid_score + pdp_score + db_score)
-
+    weight = get_interface_weight(ip)
+    print(f"get_interface_weight('{ip}') = {get_interface_weight(ip)}")
+    # total_score = weight * (snort_score + squid_score + pdp_score + db_score)
+    total_score = weight * base_score
+    print(f"Base score for IP {ip}: {base_score}, Weighted score: {total_score}")
     # Clamp e decisione
-    if total_score <= 3:
+    if total_score <= 2.5:
         final_decision = "DENY"
     else:
         final_decision = "ALLOW"
 
-    print(f"Scores for IP {ip}: Snort={snort_score}, Squid={squid_score}, PDP={pdp_score}, DB={db_score}")
+    # print(f"Scores for IP {ip}: Snort={snort_score}, Squid={squid_score}, PDP={pdp_score}, DB={db_score}")
     print(f"Total score: {total_score}, Final decision: {final_decision}")
 
     return total_score, final_decision
 
-
+# Log decision to a file
 def log_decision(src_ip, score, decision):
     with open("/var/log/pdp.log", "a") as logf:
         logf.write(f"PDP Decision: {decision} | Source IP: {src_ip} | Calculated Score: {score}\n")
@@ -193,14 +146,13 @@ def retrieve_squid_logs(ip, limit):
     return splunk_search("squid", ip, limit)
 
 def retrieve_db_logs(ip, limit):
-    return splunk_search("postgresql", ip, limit)
+    return splunk_search("queries", ip, limit)
 
 def retrieve_pdp_logs(ip, limit):
     return splunk_search("pdp_logs", ip, limit)
 
 def decide_for_ip(ip):
     score, decision = calculate_combined_score(ip)
-    #decision = "ALLOW" if score >= 3 else "DENY"  # soglia media tra 1 e 5
     log_decision(ip, score, decision)
     response = jsonify({
         "source_ip": ip,
@@ -213,7 +165,6 @@ def decide_for_ip(ip):
 def decide():
     data = request.get_json()
     source_ip = data.get('source_ip', '')
-    #source_ip = source_ip.split(',')[0].strip()
     response, status_code = decide_for_ip(source_ip)
 
     # Estraggo il json dai dati di risposta per stampare
