@@ -1,3 +1,4 @@
+
 import requests
 import json
 import time
@@ -5,6 +6,9 @@ import re
 import os
 import dotenv
 from flask import Flask, request, jsonify
+
+# Aggiungiamo una costante per la finestra temporale, così è facile da modificare
+LOG_TIME_WINDOW = "-1m"  # Esempio: analizza i log degli ultimi 15 minuti
 
 app = Flask(__name__)
 
@@ -33,17 +37,19 @@ def get_interface_weight(ip):
 
 def calculate_combined_score(ip):
     base_score = 5.0
-    snort_logs = retrieve_snort_logs(ip, limit=5)
-    squid_logs = retrieve_squid_logs(ip, limit=5)
-    pdp_logs = retrieve_pdp_logs(ip, limit=5)
-    db_logs = retrieve_db_logs(ip, limit=5)
+    
+    # MODIFICA: Passiamo la finestra temporale alle funzioni di recupero log
+    snort_logs = retrieve_snort_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
+    squid_logs = retrieve_squid_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
+    pdp_logs = retrieve_pdp_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
+    db_logs = retrieve_db_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
 
     snort_score = sum(1 for log in snort_logs if re.search(r'Priority:\s*(1|2)', log.get('_raw', '')))
-    print(f"Number of snort_logs: {len(snort_logs)}")
+    print(f"Number of snort_logs in the last '{LOG_TIME_WINDOW}': {len(snort_logs)}")
     base_score -= snort_score
     print(f"Base score after snort logs: {base_score} (Snort score: {snort_score})")
-    # squid_score = 0
-    print(f"Number of squid_logs: {len(squid_logs)}")
+    
+    print(f"Number of squid_logs in the last '{LOG_TIME_WINDOW}': {len(squid_logs)}")
     for log in squid_logs:
         raw = log.get('_raw', '')
         if "TCP_DENIED/403" in raw or "TCP_FORBIDDEN/403" in raw:
@@ -51,8 +57,8 @@ def calculate_combined_score(ip):
         elif "TCP_MISS/200" in raw:
             base_score += 1
     print(f"Base score after squid logs: {base_score}")
-    # pdp_score = 0
-    print(f"Number of pdp_logs: {len(pdp_logs)}")
+    
+    print(f"Number of pdp_logs in the last '{LOG_TIME_WINDOW}': {len(pdp_logs)}")
     for log in pdp_logs:
         raw = log.get('_raw', '')
         if "PDP Decision: ALLOW" in raw:
@@ -60,9 +66,8 @@ def calculate_combined_score(ip):
         elif "PDP Decision: DENY" in raw:
             base_score -= 1
     print(f"Base score after PDP logs: {base_score}")
-    # DB: penalizza se trovo tentativi di accesso falliti (ipotizziamo log con "DB Access DENIED")
-    #db_score = 0
-    print(f"Number of db_logs: {len(db_logs)}")
+    
+    print(f"Number of db_logs in the last '{LOG_TIME_WINDOW}': {len(db_logs)}")
     for log in db_logs:
         raw = log.get('_raw', '')
         print(f"DB log raw: {raw}")
@@ -74,24 +79,22 @@ def calculate_combined_score(ip):
             print("Detected DB Access ALLOWED, increasing score")
 
     print(f"Base score after db_logs: {base_score}")
-    # Somma pesata, con pesi semplici e bilanciati
+    
     weight = get_interface_weight(ip)
     print(f"get_interface_weight('{ip}') = {get_interface_weight(ip)}")
-    # total_score = weight * (snort_score + squid_score + pdp_score + db_score)
+    
     total_score = weight * base_score
     print(f"Base score for IP {ip}: {base_score}, Weighted score: {total_score}")
-    # Clamp e decisione
+    
     if total_score <= 2.5:
         final_decision = "DENY"
     else:
         final_decision = "ALLOW"
 
-    # print(f"Scores for IP {ip}: Snort={snort_score}, Squid={squid_score}, PDP={pdp_score}, DB={db_score}")
     print(f"Total score: {total_score}, Final decision: {final_decision}")
 
     return total_score, final_decision
 
-# Log decision to a file
 def log_decision(src_ip, score, decision):
     with open("/var/log/pdp.log", "a") as logf:
         logf.write(f"PDP Decision: {decision} | Source IP: {src_ip} | Calculated Score: {score}\n")
@@ -104,8 +107,18 @@ SPLUNK_HOST = "https://10.10.3.200:8089"
 SPLUNK_USER = os.getenv("SPLUNK_USERNAME")
 SPLUNK_PASS = os.getenv("SPLUNK_PASSWORD")
 
-def splunk_search(index, ip, limit):
-    search_query = f"search index={index} {ip} | sort - _time | head {limit}"
+# MODIFICA: La funzione ora accetta un parametro 'earliest_time' opzionale
+def splunk_search(index, ip, limit, earliest_time=None):
+    # Costruiamo il filtro temporale solo se 'earliest_time' è specificato
+    time_filter = ""
+    if earliest_time:
+        # La query ora include earliest e latest per definire l'intervallo
+        time_filter = f' earliest="{earliest_time}" latest="now"'
+    
+    # La query viene composta includendo il filtro temporale (se presente)
+    search_query = f'search index={index} {ip}{time_filter} | sort - _time | head {limit}'
+    print(f"Executing Splunk Query: {search_query}") # Utile per il debug
+
     req_data = {
         "search": search_query,
         "output_mode": "json"
@@ -118,7 +131,6 @@ def splunk_search(index, ip, limit):
     )
     sid = resp.json()["sid"]
 
-    # Wait for job to complete
     while True:
         job_resp = requests.get(
             f"{SPLUNK_HOST}/services/search/jobs/{sid}",
@@ -130,7 +142,6 @@ def splunk_search(index, ip, limit):
             break
         time.sleep(1)
 
-    # Get results
     results_resp = requests.get(
         f"{SPLUNK_HOST}/services/search/jobs/{sid}/results",
         params={"output_mode": "json"},
@@ -139,17 +150,18 @@ def splunk_search(index, ip, limit):
     )
     return results_resp.json()["results"]
 
-def retrieve_snort_logs(ip, limit):
-    return splunk_search("snort", ip, limit)
+# MODIFICA: Le funzioni wrapper ora accettano e passano 'earliest_time'
+def retrieve_snort_logs(ip, limit, earliest_time=None):
+    return splunk_search("snort", ip, limit, earliest_time)
 
-def retrieve_squid_logs(ip, limit):
-    return splunk_search("squid", ip, limit)
+def retrieve_squid_logs(ip, limit, earliest_time=None):
+    return splunk_search("squid", ip, limit, earliest_time)
 
-def retrieve_db_logs(ip, limit):
-    return splunk_search("queries", ip, limit)
+def retrieve_db_logs(ip, limit, earliest_time=None):
+    return splunk_search("queries", ip, limit, earliest_time)
 
-def retrieve_pdp_logs(ip, limit):
-    return splunk_search("pdp_logs", ip, limit)
+def retrieve_pdp_logs(ip, limit, earliest_time=None):
+    return splunk_search("pdp_logs", ip, limit, earliest_time)
 
 def decide_for_ip(ip):
     score, decision = calculate_combined_score(ip)
@@ -165,14 +177,18 @@ def decide_for_ip(ip):
 def decide():
     data = request.get_json()
     source_ip = data.get('source_ip', '')
+    if not source_ip:
+        return jsonify({"error": "source_ip is required"}), 400
+        
     response, status_code = decide_for_ip(source_ip)
 
-    # Estraggo il json dai dati di risposta per stampare
     json_data = response.get_json()
     print(f"Decision for {source_ip}: {json_data['decision']} with score {json_data['score']}")
 
     return response, status_code
 
-
 if __name__ == "__main__":
+     # Disabilita i messaggi di warning per le richieste HTTPS non verificate
+     import urllib3
+     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
      app.run(host='0.0.0.0', port=5001, debug=False)
