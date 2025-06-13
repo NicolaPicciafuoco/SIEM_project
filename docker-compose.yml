@@ -27,8 +27,6 @@ services:
       - postgres_logs:/var/log/postgresql # Monta i log di PostgreSQL in sola lettura
       - squid_blacklist:/etc/squid
       - pdp_logs:/var/log
-    # command: [ "sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0" ]
-    # command: ["sh", "-c", "mkdir -p /var/log/snort && touch /var/log/snort/snort.log && service rsyslog start && snort -c /etc/snort/snort.conf -i any -l /var/log/snort"]
     depends_on:
       - core-server
 
@@ -45,12 +43,12 @@ services:
       - "8089:8089"  # Porta endpoint REST API
     volumes:
       - splunk_data:/opt/splunk/var
+      - splunk_conf:/opt/splunk/etc
       - snort_logs:/var/log/snort
       - squid_logs:/var/log/squid
       - postgres_logs:/var/log/postgresql
       - pdp_logs:/var/log
       - query_logs:/var/log/queries
-    #  - ./splunk:/opt/splunk/etc/system/local
     networks:
       eth_net:
         ipv4_address: 10.10.3.200
@@ -250,6 +248,8 @@ networks:
 
 volumes:
     splunk_data:
+      driver: local
+    splunk_conf:
       driver: local
     snort_logs:
       driver: local

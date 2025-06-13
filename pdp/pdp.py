@@ -8,14 +8,13 @@ import dotenv
 from flask import Flask, request, jsonify
 
 # Aggiungiamo una costante per la finestra temporale, così è facile da modificare
-LOG_TIME_WINDOW = "-1m"  # Esempio: analizza i log degli ultimi 15 minuti
+LOG_TIME_WINDOW = "-2m"  # Esempio: analizza i log degli ultimi 15 minuti
 
 app = Flask(__name__)
 
 # Existing interface weights and scoring logic from your file
 INTERFACE_WEIGHTS = {
     'mgmt_net': 1.0,
-    'server_net': 0.9,
     'eth_net': 0.8,
     'guest_net': 0.7,
     'int_net': 0.6
@@ -28,8 +27,6 @@ def get_interface_weight(ip):
         return INTERFACE_WEIGHTS['mgmt_net']
     elif ip.startswith("10.10.3."):
         return INTERFACE_WEIGHTS['eth_net']
-    elif ip.startswith("10.10.4."):
-        return INTERFACE_WEIGHTS['server_net']
     elif ip.startswith("10.10.5."):
         return INTERFACE_WEIGHTS['int_net']
     else:
@@ -39,10 +36,10 @@ def calculate_combined_score(ip):
     base_score = 5.0
     
     # MODIFICA: Passiamo la finestra temporale alle funzioni di recupero log
-    snort_logs = retrieve_snort_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
-    squid_logs = retrieve_squid_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
-    pdp_logs = retrieve_pdp_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
-    db_logs = retrieve_db_logs(ip, limit=5, earliest_time=LOG_TIME_WINDOW)
+    snort_logs = retrieve_snort_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
+    squid_logs = retrieve_squid_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
+    pdp_logs = retrieve_pdp_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
+    db_logs = retrieve_db_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
 
     snort_score = sum(1 for log in snort_logs if re.search(r'Priority:\s*(1|2)', log.get('_raw', '')))
     print(f"Number of snort_logs in the last '{LOG_TIME_WINDOW}': {len(snort_logs)}")
@@ -189,6 +186,6 @@ def decide():
 
 if __name__ == "__main__":
      # Disabilita i messaggi di warning per le richieste HTTPS non verificate
-     import urllib3
-     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    #  import urllib3
+    #  urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
      app.run(host='0.0.0.0', port=5001, debug=False)

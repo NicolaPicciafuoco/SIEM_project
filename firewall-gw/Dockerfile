@@ -53,7 +53,5 @@ RUN mkdir -p /var/log/squid && \
 
 # Abilitiamo l’entrypoint
 ENTRYPOINT ["/usr/local/bin/fw-init.sh"]
-# # CMD ["sh", "-c", "/usr/local/bin/fw-init.sh && snort -A console -c /etc/snort/snort.conf -i eth0"]
-# CMD ["sh", "-c", "/usr/local/bin/fw-init.sh && service rsyslog start && snort -c /etc/snort/snort.conf -i eth0"]
 
 
