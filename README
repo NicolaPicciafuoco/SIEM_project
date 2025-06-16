@@ -1,55 +1,70 @@
-## Commands
+- [SIEM Project](#siem-project)
+  - [🔎 Overview](#-overview)
+  - [🚀 Prerequisites](#-prerequisites)
+  - [🛠️ Installation and Startup](#️-installation-and-startup)
+      - [1. Download the Code](#1-download-the-code)
+      - [2. Run the Project](#2-run-the-project)
+  - [🖥️ Useful Commands](#️-useful-commands)
+      - [1. Run a Test Database Query from an arbitrary Client (*For Example Guest1*)](#1-run-a-test-database-query-from-an-arbitrary-client-for-example-guest1)
 
-- Splunk:
-  - *./splunk start*
-  - *./splunk stop*
-  - *./splunk restart*
-- Squid:
-  - *`curl -x http://10.10.<2>.210:3128 -I <http://10.10.4.100>`*
-- Postgres
-  - *`PGPASSWORD='VeryStr0ngP@ss' psql -h 10.10.4.100 -U siem_user -d siem -c '\dt'`*: comando per visualizzare il db e poi interrompre la connessione
-  - *`psql -h 10.10.4.100 -p 5432 -U siem_reader -d siem`*: comando per accedere al db e mantenere la connessione
-  - *`curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_reader" --data-urlencode "password=ReaderPassword0" --data-urlencode "query=SELECT * FROM public;"`*
-  - *`curl 'http://10.10.4.100/query?db=siem&user=siem_reader&password=ReaderPassword0&query=SELECT%20%2A%20FROM%20public`*
 
-## TODO
+# SIEM Project
 
-- Passo 1
-  - Tutto deve passare per il firewall                                                                   FATTO
-  - Tutti possono raggiunger il SERVER tramite solo i protocolli controllati da squid (HTTP, HTTPS, FTP) FATTO
-  - Guest: solo nodi fratelli e Server                                                                   FATTO
-  - Management: solo nodi fratelli e Server                                                              FATTO
-  - Ethernet: solo nodi fratelli e Server e solo PINGARE Guest e Management                              FATTO
-  - Internet: solo Server                                                                                FATTO
-- Passo 2
-  - Ampliare iptables, snort e squid in base alle policy
-  - Raffinare le regole in local.rules di snort, in base alle policy. Preparare le rule options. (siamo qui)
-  - Finire squid -> Stabile livelli di gravità 1-4
-  - Revisione di IpTables.
-  - ...
-- Passo 3
-  - Definire metrica di valutazione punti per la fiducia (*Splunk?*) 
-  - Definire il PDP e il PEP
-  - Testare
-  - Relazione
-  - ...
+A containerized Security Information and Event Management (SIEM) system integrating firewalling, IDS, transparent proxy, policy enforcement/decision points, and an indexing engine to deliver a complete **Zero-Trust** architecture.
 
-## Commit
+## 🔎 Overview
 
-### Commit Gabriel 17/04/2025
+This project demonstrates a modular, Docker Compose–orchestrated architecture in which:
 
-- Implementazione comunicazione services con alpine al posto di Ubuntu. 
-- Firewall pressocchè invariato: le regole sono diverse.
-- Comandi eseguiti lato *docker-compose.yaml*: da controllare e poi esportare in *Dockerfile*
-- LE RETI GUEST NON HANNO IL NAT_ADMIN E QUINID NON FANNO EFFETTIVAMENTE NIENTE SE NON COMINICASRE DIRETTAMENTE TRA DI LORO
-- Rimasto il collegamento diretto al server che deve essere in realtà dopo il firewall (DA CAMBIARE)
-- *Ripetizione file init-routes.sh* perchè non ho avvuto voglia di correggere la posizione nei file *Dockerfile* e *docker-compose.yaml*
+- **firewall-gw** applies `iptables` rules, NAT/MASQUERADE, and runs Snort for both the *data plane* and the *control plane*.  
+- **squid** acts as a transparent HTTP/HTTPS/FTP proxy with ACLs based on URL, time, and subnet.  
+- **core-server** hosts Nginx (reverse-proxying to the PEP) and PostgreSQL, with advanced logging and least-privilege execution via `su-exec`.  
+- **PEP** (Policy Enforcement Point) receives requests, enriches context, and forwards them to the PDP.  
+- **PDP** (Policy Decision Point) queries Splunk, computes a trust score, and returns `ALLOW` or `DENY`.  
+- **Splunk** indexes logs from Snort, Squid, PostgreSQL, and PDP, exposes REST APIs to the PDP, and provides dashboards for alerting and reporting.  
 
-### Commit Gabriel 19/04/2025
+All components communicate over five isolated Docker networks (`guest_net`, `mgmt_net`, `eth_net`, `server_net`, `int_net`), each carrying a different trust weight for policy evaluation.
 
-- Pulizia copie di file *init-routes.sh*
-- Correzione *server*: ora sta dopo il firewall ad un unico indirizzo
+## 🚀 Prerequisites
 
-### Commit Gabriel 25/04/2025
+- **Docker** ≥ 20.10  
+- **Docker Compose** ≥ 1.29  
+- Create a `.env` file in the project root containing:
+  ```bash
+    SPLUNK_USERNAME=<your_splunk_username>
+    SPLUNK_PASSWORD=<your_splunk_password>
+  ```
 
-- Correzione finale collegamenti tra nets via firewall
+To install Docker and Docker Compose, follow the official [guide](https://docs.docker.com/compose/install/).
+
+## 🛠️ Installation and Startup
+
+#### 1. Download the Code
+
+    ```bash
+    curl -L -o SIEM_project.zip \
+    https://github.com/NicolaPicciafuoco/SIEM_project/archive/refs/heads/master.zip
+
+    unzip SIEM_project.zip
+
+    cd SIEM_project-master
+    ```
+
+#### 2. Run the Project
+
+From the project root directory, execute:
+```bash
+docker compose up --build
+```
+
+## 🖥️ Useful Commands
+
+#### 1. Run a Test Database Query from an arbitrary Client (*For Example Guest1*)
+
+```bash
+  curl -G "http://localhost/query" \
+  --data-urlencode "db=<db>" \
+  --data-urlencode "user=<user>" \
+  --data-urlencode "password=<password>" \
+  --data-urlencode "query=SELECT * FROM <db_table>;"
+```
