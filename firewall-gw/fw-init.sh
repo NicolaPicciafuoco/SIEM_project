@@ -25,6 +25,27 @@ iptables -F
 iptables -X
 iptables -t nat -F
 
+# 3.1) Mitigazione DoS: rate-limit sulle nuove connessioni TCP SYN
+# crea una chain dedicata
+iptables -N DOS_FILTER
+
+# lascia passare fino a 100 nuove connessioni al secondo (burst 200), poi scarta
+iptables -A DOS_FILTER -m limit --limit 50/second --limit-burst 100 -j RETURN
+iptables -A DOS_FILTER -j DROP
+
+# applica il filtro sia all’INPUT che al FORWARD delle connessioni SYN
+iptables -I INPUT   -p tcp --syn -j DOS_FILTER
+iptables -I FORWARD -p tcp --syn -j DOS_FILTER
+
+# 3.2) Limitazione connessioni per singolo IP
+# se un singolo IP apre più di 20 connessioni TCP, rifiuta le nuove
+iptables -A INPUT   -p tcp --syn -m connlimit --connlimit-above 20 --connlimit-mask 32 -j REJECT
+iptables -A FORWARD -p tcp --syn -m connlimit --connlimit-above 20 --connlimit-mask 32 -j REJECT
+
+# 3.3) Rate-limit ICMP (ping flood)
+iptables -A INPUT  -p icmp --icmp-type echo-request -m limit --limit 10/second --limit-burst 20 -j ACCEPT
+iptables -A INPUT  -p icmp --icmp-type echo-request -j DROP
+
 # 4) Transparent proxy: intercept HTTP, HTTPS e FTP verso Squid (porta 3128)
 iptables -t nat -A PREROUTING -p tcp --dport 80  -j REDIRECT --to-port 3128
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 3128
