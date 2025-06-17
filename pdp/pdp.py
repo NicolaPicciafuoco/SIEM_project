@@ -1,4 +1,3 @@
-
 import requests
 import json
 import time
@@ -6,6 +5,11 @@ import re
 import os
 import dotenv
 from flask import Flask, request, jsonify
+# Importa urllib3 per gestire i warning SSL, se necessario
+import urllib3
+
+# Supprimi i warning SSL per verify=False (solo per ambienti non di produzione!)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Aggiungiamo una costante per la finestra temporale, così è facile da modificare
 LOG_TIME_WINDOW = "-2m"  # Esempio: analizza i log degli ultimi 15 minuti
@@ -14,11 +18,23 @@ app = Flask(__name__)
 
 # Existing interface weights and scoring logic from your file
 INTERFACE_WEIGHTS = {
-    'mgmt_net': 1.0,
+    'mgmt_net': 2.0,
     'eth_net': 0.8,
     'guest_net': 0.7,
     'int_net': 0.6
 }
+
+# NUOVA COSTANTE: Pesi di penalità per le priorità Snort (come concordato, più grave -> penalità maggiore)
+SNORT_PRIORITY_PENALTIES = {
+    1: 1.0,  # Priority 1: Molto alta penalità
+    2: 0.6,  # Priority 2: Alta penalità
+    3: 0.2,  # Priority 3: Media penalità
+    4: 0.1,  # Priority 4: Bassa penalità
+    # Possiamo aggiungere un default o ignorare altre priorità se non elencate
+}
+# Regex per estrarre il numero di priorità dai log Snort
+SNORT_PRIORITY_PATTERN = re.compile(r'\[Priority:\s*(\d+)\]')
+
 
 def get_interface_weight(ip):
     if ip.startswith("10.10.1."):
@@ -32,58 +48,85 @@ def get_interface_weight(ip):
     else:
         return 0.5  # peso default
 
+
 def calculate_combined_score(ip):
     base_score = 5.0
-    
-    # MODIFICA: Passiamo la finestra temporale alle funzioni di recupero log
+
+    # Passiamo la finestra temporale alle funzioni di recupero log, usando il metodo di ricerca che funziona per te
     snort_logs = retrieve_snort_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
     squid_logs = retrieve_squid_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
     pdp_logs = retrieve_pdp_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
     db_logs = retrieve_db_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
 
-    snort_score = sum(1 for log in snort_logs if re.search(r'Priority:\s*(1|2)', log.get('_raw', '')))
+    # --- LOGICA DI CALCOLO SNORT MODIFICATA (presa dalla versione precedente) ---
     print(f"Number of snort_logs in the last '{LOG_TIME_WINDOW}': {len(snort_logs)}")
-    base_score -= snort_score
-    print(f"Base score after snort logs: {base_score} (Snort score: {snort_score})")
-    
+    total_snort_penalty = 0
+    for log in snort_logs:
+        raw = log.get('_raw', '')
+        match = SNORT_PRIORITY_PATTERN.search(raw)
+        if match:
+            try:
+                priority = int(match.group(1))
+                # Applica la penalità definita nella costante
+                penalty = SNORT_PRIORITY_PENALTIES.get(priority, 0)  # Default a 0 se priorità non definita
+                total_snort_penalty += penalty
+                print(f"  Snort log with Priority {priority} found, adding penalty: -{penalty}")
+            except ValueError:
+                print(f"  Warning: Could not parse priority number from log: {raw}")
+        else:
+            print(f"  Warning: Priority pattern not found in log: {raw}")
+
+    base_score -= total_snort_penalty
+    print(f"Total snort penalty applied: -{total_snort_penalty}")
+    print(f"Base score after snort logs: {base_score}")
+    # --- FINE LOGICA SNORT MODIFICATA ---
+
     print(f"Number of squid_logs in the last '{LOG_TIME_WINDOW}': {len(squid_logs)}")
     for log in squid_logs:
         raw = log.get('_raw', '')
         if "TCP_DENIED/403" in raw or "TCP_FORBIDDEN/403" in raw:
             base_score -= 1
+            print(f"  Squid DENIED found, decreasing score by 1. Current score: {base_score}")
         elif "TCP_MISS/200" in raw:
             base_score += 1
+            print(f"  Squid ALLOWED (TCP_MISS/200) found, increasing score by 1. Current score: {base_score}")
+        # Puoi aggiungere altre regole Squid qui se necessario
     print(f"Base score after squid logs: {base_score}")
-    
+
     print(f"Number of pdp_logs in the last '{LOG_TIME_WINDOW}': {len(pdp_logs)}")
     for log in pdp_logs:
         raw = log.get('_raw', '')
         if "PDP Decision: ALLOW" in raw:
             base_score += 1
+            print(f"  PDP ALLOW found, increasing score by 1. Current score: {base_score}")
         elif "PDP Decision: DENY" in raw:
             base_score -= 1
+            print(f"  PDP DENY found, decreasing score by 1. Current score: {base_score}")
     print(f"Base score after PDP logs: {base_score}")
-    
+
     print(f"Number of db_logs in the last '{LOG_TIME_WINDOW}': {len(db_logs)}")
     for log in db_logs:
         raw = log.get('_raw', '')
-        print(f"DB log raw: {raw}")
+        # print(f"DB log raw: {raw}") # Potrebbe essere molto verboso, disabilitato per default
         if "permission denied" in raw:
-            base_score -= 1
-            print("Detected DB Access DENIED, decreasing score")
-        elif '"error":null' in raw:
+            base_score -= 1.5  # Penalità leggermente maggiore per accessi DB negati
+            print("  Detected DB Access DENIED, decreasing score by 1.5")
+        # Assumiamo che un errore null indichi un accesso riuscito o una query senza errori significativi
+        # Questa logica potrebbe dover essere affinata in base ai log DB specifici
+        elif '"error":null' in raw or (
+                "query successful" in raw.lower() and "permission denied" not in raw.lower()):  # Aggiunto controllo per "query successful"
             base_score += 1
-            print("Detected DB Access ALLOWED, increasing score")
+            print("  Detected potential DB Access ALLOWED/SUCCESS, increasing score by 1")
 
     print(f"Base score after db_logs: {base_score}")
-    
+
     weight = get_interface_weight(ip)
     print(f"get_interface_weight('{ip}') = {get_interface_weight(ip)}")
-    
+
     total_score = weight * base_score
     print(f"Base score for IP {ip}: {base_score}, Weighted score: {total_score}")
-    
-    if total_score <= 2.5:
+
+    if total_score <= 2.5:  # Soglia di DENY (potrebbe essere necessario calibrarla)
         final_decision = "DENY"
     else:
         final_decision = "ALLOW"
@@ -92,73 +135,143 @@ def calculate_combined_score(ip):
 
     return total_score, final_decision
 
-def log_decision(src_ip, score, decision):
-    with open("/var/log/pdp.log", "a") as logf:
-        logf.write(f"PDP Decision: {decision} | Source IP: {src_ip} | Calculated Score: {score}\n")
 
-# --- SPLUNK QUERY SECTION ---
+def log_decision(src_ip, score, decision):
+    # Aggiungiamo un timestamp al log
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    with open("/var/log/pdp.log", "a") as logf:
+        logf.write(
+            f"{timestamp} - PDP Decision: {decision} | Source IP: {src_ip} | Calculated Score: {score:.2f}\n")  # Formattiamo lo score
+
+
+# --- SPLUNK QUERY SECTION (dalla tua versione funzionante) ---
 
 dotenv.load_dotenv()
 
-SPLUNK_HOST = "https://10.10.3.200:8089"
+# Assicurati che queste variabili siano configurate correttamente nel tuo .env
+# Usiamo os.getenv con default se necessario
+SPLUNK_HOST = os.getenv("SPLUNK_HOST", "https://10.10.3.200:8089")  # Default
 SPLUNK_USER = os.getenv("SPLUNK_USERNAME")
 SPLUNK_PASS = os.getenv("SPLUNK_PASSWORD")
 
-# MODIFICA: La funzione ora accetta un parametro 'earliest_time' opzionale
-def splunk_search(index, ip, limit, earliest_time=None):
+# Verifichiamo che le credenziali siano caricate
+if not SPLUNK_USER or not SPLUNK_PASS:
+    print("Errore: Variabili d'ambiente SPLUNK_USERNAME o SPLUNK_PASSWORD non caricate!")
+    # In un ambiente di produzione, considera di uscire qui:
+    # import sys
+    # sys.exit(1)
+
+
+# La funzione di ricerca Splunk (presa dalla tua versione)
+def splunk_search(index, ip_term, limit, earliest_time=None):
     # Costruiamo il filtro temporale solo se 'earliest_time' è specificato
     time_filter = ""
     if earliest_time:
         # La query ora include earliest e latest per definire l'intervallo
         time_filter = f' earliest="{earliest_time}" latest="now"'
-    
-    # La query viene composta includendo il filtro temporale (se presente)
-    search_query = f'search index={index} {ip}{time_filter} | sort - _time | head {limit}'
-    print(f"Executing Splunk Query: {search_query}") # Utile per il debug
 
-    req_data = {
-        "search": search_query,
-        "output_mode": "json"
-    }
-    resp = requests.post(
-        f"{SPLUNK_HOST}/services/search/jobs",
-        data=req_data,
-        auth=(SPLUNK_USER, SPLUNK_PASS),
-        verify=False
-    )
-    sid = resp.json()["sid"]
+    # La query viene composta usando il termine IP come ricerca generale
+    # Questo è il formato che ha funzionato per te nel recuperare i log.
+    # Usiamo ip_term come nome per chiarire che è il termine di ricerca per l'IP
+    search_query = f'search index={index} {ip_term}{time_filter} | sort - _time | head {limit}'
+    print(f"Executing Splunk Query: {search_query}")  # Utile per il debug
 
-    while True:
-        job_resp = requests.get(
-            f"{SPLUNK_HOST}/services/search/jobs/{sid}",
+    try:
+        # Aggiungiamo timeout alla richiesta iniziale
+        resp = requests.post(
+            f"{SPLUNK_HOST}/services/search/jobs",
+            data={"search": search_query, "output_mode": "json"},
+            auth=(SPLUNK_USER, SPLUNK_PASS),
+            verify=False,
+            # ATTENZIONE: Disabilita la verifica SSL per test. NON USARLO IN PRODUZIONE con certificati non verificati.
+            timeout=30  # Aggiunge un timeout
+        )
+        resp.raise_for_status()  # Solleva un'eccezione per stati di errore HTTP (4xx o 5xx)
+
+        sid_data = resp.json()
+        if "sid" not in sid_data:
+            print(f"Errore Splunk: SID non ricevuto. Risposta: {sid_data}")
+            return []  # Ritorna lista vuota in caso di errore
+
+        sid = sid_data["sid"]
+        # print(f"Splunk SID: {sid}") # Meno verboso
+
+        # Poll per il completamento del job (semplice loop while dalla tua versione, con aggiunta di timeout)
+        start_polling_time = time.time()
+        polling_timeout = 60  # Timeout totale per il polling in secondi
+        while time.time() - start_polling_time < polling_timeout:
+            job_resp = requests.get(
+                f"{SPLUNK_HOST}/services/search/jobs/{sid}",
+                params={"output_mode": "json"},
+                auth=(SPLUNK_USER, SPLUNK_PASS),
+                verify=False,
+                timeout=10  # Timeout per ogni richiesta di polling
+            )
+            job_resp.raise_for_status()
+
+            job_status = job_resp.json()
+            if job_status["entry"][0]["content"]["isDone"]:
+                # print(f"Splunk job {sid} is done.") # Meno verboso
+                break
+            # print(f"Splunk job {sid} not done, waiting...") # Meno verboso
+            time.sleep(1)
+        else:  # Questo blocco else viene eseguito se il loop while termina per timeout
+            print(f"Timeout waiting for Splunk job {sid} to complete after {polling_timeout} seconds.")
+            # Potresti voler cancellare il job qui se necessario
+            return []
+
+        # Recupera i risultati (con aggiunta di timeout)
+        results_resp = requests.get(
+            f"{SPLUNK_HOST}/services/search/jobs/{sid}/results",
             params={"output_mode": "json"},
             auth=(SPLUNK_USER, SPLUNK_PASS),
-            verify=False
+            verify=False,
+            timeout=30  # Timeout per la richiesta dei risultati
         )
-        if job_resp.json()["entry"][0]["content"]["isDone"]:
-            break
-        time.sleep(1)
+        results_resp.raise_for_status()
 
-    results_resp = requests.get(
-        f"{SPLUNK_HOST}/services/search/jobs/{sid}/results",
-        params={"output_mode": "json"},
-        auth=(SPLUNK_USER, SPLUNK_PASS),
-        verify=False
-    )
-    return results_resp.json()["results"]
+        results = results_resp.json().get("results", [])
+        # print(f"Retrieved {len(results)} results for SID {sid}.") # Meno verboso
+        return results
 
-# MODIFICA: Le funzioni wrapper ora accettano e passano 'earliest_time'
+    except requests.exceptions.Timeout:
+        print(f"Errore: Timeout durante la comunicazione con Splunk job {sid}.")
+        return []
+    except requests.exceptions.RequestException as e:
+        print(f"Errore di rete o HTTP durante la comunicazione con Splunk job {sid}: {e}")
+        return []  # Ritorna lista vuota in caso di errore
+    except json.JSONDecodeError:
+        print(f"Errore nel decodificare la risposta JSON da Splunk job {sid}.")
+        return []
+    except Exception as e:
+        print(f"Errore generico durante la ricerca Splunk per SID {sid}: {e}")
+        return []
+
+
+# Le funzioni wrapper ora passano semplicemente l'IP come termine di ricerca
 def retrieve_snort_logs(ip, limit, earliest_time=None):
+    # Usiamo l'IP direttamente come termine di ricerca, come nel tuo codice funzionante
     return splunk_search("snort", ip, limit, earliest_time)
 
+
 def retrieve_squid_logs(ip, limit, earliest_time=None):
+    # Usiamo l'IP direttamente come termine di ricerca
     return splunk_search("squid", ip, limit, earliest_time)
 
+
 def retrieve_db_logs(ip, limit, earliest_time=None):
+    # Usiamo l'IP direttamente come termine di ricerca
     return splunk_search("queries", ip, limit, earliest_time)
 
+
 def retrieve_pdp_logs(ip, limit, earliest_time=None):
+    # Usiamo l'IP direttamente come termine di ricerca. Potrebbe essere necessario affinare
+    # se l'IP nei pdp_logs non è solo "l'IP" ma parte di una stringa più lunga.
+    # Ad esempio, se cerchi "Source IP: 10.10.5.11" dovresti passarla come ip_term:
+    # return splunk_search("pdp_logs", f'"Source IP: {ip}"', limit, earliest_time)
+    # Per ora teniamo la ricerca semplice con il solo IP come termine:
     return splunk_search("pdp_logs", ip, limit, earliest_time)
+
 
 def decide_for_ip(ip):
     score, decision = calculate_combined_score(ip)
@@ -170,22 +283,41 @@ def decide_for_ip(ip):
     }), 200
     return response
 
+
 @app.route('/decide', methods=['POST'])
 def decide():
     data = request.get_json()
     source_ip = data.get('source_ip', '')
     if not source_ip:
         return jsonify({"error": "source_ip is required"}), 400
-        
+
     response, status_code = decide_for_ip(source_ip)
 
-    json_data = response.get_json()
-    print(f"Decision for {source_ip}: {json_data['decision']} with score {json_data['score']}")
+    # La risposta di jsonify è un oggetto Response, per ottenere i dati dobbiamo usare get_json()
+    try:
+        json_data = response.get_json()
+        # Formattiamo lo score per una migliore leggibilità nei log dell'applicazione
+        formatted_score = f"{json_data.get('score', 'N/A'):.2f}" if isinstance(json_data.get('score'),
+                                                                               (int, float)) else json_data.get('score',
+                                                                                                                'N/A')
+        print(f"Decision for {source_ip}: {json_data.get('decision', 'N/A')} with score {formatted_score}")
+    except Exception as e:
+        print(f"Could not log decision details for {source_ip}: {e}")
+        # Continua comunque a restituire la risposta originale
 
     return response, status_code
 
+
 if __name__ == "__main__":
-    # Disabilita i messaggi di warning per le richieste HTTPS non verificate
-    #  import urllib3
-    #  urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    # Assicurati che le credenziali Splunk siano caricate prima di avviare l'app
+    if not SPLUNK_USER or not SPLUNK_PASS:
+        print(
+            "\n!!!! ERRORE CRITICO: CREDENZIALI SPLUNK MANCANTI. L'applicazione potrebbe non funzionare correttamente. !!!!\n")
+        # In un ambiente di produzione, potresti voler uscire qui:
+        # import sys
+        # sys.exit(1)
+    else:
+        print("Credenziali Splunk caricate con successo.")
+
+    # ATTENZIONE: Disabilita il debug in produzione!
     app.run(host='0.0.0.0', port=5001, debug=False)
