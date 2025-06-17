@@ -62,9 +62,5 @@ docker compose up --build
 #### 1. Run a Test Database Query from an arbitrary Client (*For Example Guest1*)
 
 ```bash
-  curl -G "http://localhost/query" \
-  --data-urlencode "db=<db>" \
-  --data-urlencode "user=<user>" \
-  --data-urlencode "password=<password>" \
-  --data-urlencode "query=SELECT * FROM <db_table>;"
+  curl -G "http://10.10.4.100/query" --data-urlencode "db=<db>" --data-urlencode "user=<user>" --data-urlencode "password=<password>" --data-urlencode "query=SELECT * FROM <db_table>;"
 ```
