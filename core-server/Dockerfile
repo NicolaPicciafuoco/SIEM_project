@@ -16,6 +16,7 @@ ENV PGDATA=/var/lib/postgresql/data \
 RUN sed -i 's|^listen = .*|listen = 127.0.0.1:9000|' /etc/php82/php-fpm.d/www.conf
 
 # 3a) Copia config Nginx e script PHP
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY query.php /usr/share/nginx/html/query.php
 

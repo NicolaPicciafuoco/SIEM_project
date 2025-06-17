@@ -53,9 +53,6 @@ def handle_access_request():
             else:
                 logging.warning(f"Denying request from {source_ip}")
                 return jsonify({"error": "Access denied"}), 403 #non può entrareeee
-        # elif pdp_response.status_code == 403:
-        #     logging.warning(f"Denying request from {source_ip}")
-        #     return jsonify({"error": "Access denied"}), 403
         else:
             logging.error(f"Unexpected PDP response: {pdp_response.status_code}")
             return jsonify({"error": "Internal service error"}), 500
