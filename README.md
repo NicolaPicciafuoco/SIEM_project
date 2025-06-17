@@ -61,6 +61,37 @@ docker compose up --build
 
 #### 1. Run a Test Database Query from an arbitrary Client (*For Example Guest1*)
 
-```bash
-  curl -G "http://10.10.4.100/query" --data-urlencode "db=<db>" --data-urlencode "user=<user>" --data-urlencode "password=<password>" --data-urlencode "query=SELECT * FROM <db_table>;"
-```
+* Query base:
+  ```bash
+    curl -G "http://10.10.4.100/query" --data-urlencode "db=<db>" --data-urlencode "user=<user>" --data-urlencode "password=<password>" --data-urlencode "query=SELECT * FROM <db_table>;"
+  ```
+
+* Query con output *```{"error":"SQLSTATE[42501]: Insufficient privilege: 7 ERROR:  permission denied for table public"}```*
+  ```bash
+    curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_user" --data-urlencode "password=VeryStrongPass0" --data-urlencode "query=SELECT * FROM public;"
+  ```
+
+* Query con output *```{"error":"SQLSTATE[42501]: Insufficient privilege: 7 ERROR:  permission denied for table private"}```*
+  ```bash
+    curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_user" --data-urlencode "password=VeryStrongPass0" --data-urlencode "query=SELECT * FROM private;"
+  ```
+
+* Query con output *```[{"id":1,"info":"test log 1"},{"id":2,"info":"test log 2"}]```*
+  ```bash
+    curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_admin" --data-urlencode "password=AdminPassword0" --data-urlencode "query=SELECT * FROM public;"
+  ```
+
+* Query con output *```[{"id":1,"secret":"test secret 1"},{"id":2,"secret":"test secret 2"}]```*
+  ```bash
+    curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_admin" --data-urlencode "password=AdminPassword0" --data-urlencode "query=SELECT * FROM private;"
+  ```
+
+* Query con output *```[{"id":1,"info":"test log 1"},{"id":2,"info":"test log 2"}]```*
+  ```bash
+    curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_reader" --data-urlencode "password=ReaderPassword0" --data-urlencode "query=SELECT * FROM public;"
+  ```
+
+* Query con output *```{"error":"SQLSTATE[42501]: Insufficient privilege: 7 ERROR:  permission denied for table private"}```*
+  ```bash
+    curl -G "http://10.10.4.100/query" --data-urlencode "db=siem" --data-urlencode "user=siem_reader" --data-urlencode "password=ReaderPassword0" --data-urlencode "query=SELECT * FROM private;"
+  ```
