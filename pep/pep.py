@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 # Configuration
 PDP_URL = os.getenv('PDP_URL', 'http://pdp:5001/decide')
 DB_URL = os.getenv('DB_URL', 'http://core-server/query.php')
-TIMEOUT = float(os.getenv('TIMEOUT', '5.0'))
+TIMEOUT = float(os.getenv('TIMEOUT', '30.0'))
 
 @app.route('/access', methods=['GET'])
 def handle_access_request():
