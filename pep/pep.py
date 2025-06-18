@@ -18,11 +18,13 @@ def handle_access_request():
     """
     try:
         req_data = request.args.to_dict()
+        req_params = request.args
         source_ip = request.headers.get('X-Forwarded-For', "10.10.5.0")
         logging.info(f"Received DB access request from {source_ip}")
         
         pdp_payload = {
             "source_ip": source_ip,
+            "db_user": req_params.get('user', 'siem_user'),
             "request": req_data,
             "timestamp": request.headers.get('X-Request-Time')
         }

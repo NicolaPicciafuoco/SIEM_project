@@ -44,13 +44,14 @@ def get_interface_weight(ip):
         return 0.5  # peso default
 
 
-def calculate_combined_score(ip):
+def calculate_combined_score(ip, db_user):
     base_score = 5.0
 
     snort_logs = retrieve_snort_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
     squid_logs = retrieve_squid_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
     pdp_logs = retrieve_pdp_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
     db_logs = retrieve_db_logs(ip, limit=20, earliest_time=LOG_TIME_WINDOW)
+    db_user_history = retrieve_db_user_history(db_user, limit=20, earliest_time=LOG_TIME_WINDOW)
 
     print(f"Number of snort_logs in the last '{LOG_TIME_WINDOW}': {len(snort_logs)}")
     total_snort_penalty = 0
@@ -104,6 +105,18 @@ def calculate_combined_score(ip):
                 "query successful" in raw.lower() and "permission denied" not in raw.lower()):
             base_score += 1
             print("  Detected potential DB Access ALLOWED/SUCCESS, increasing score by 1")
+
+    print(f"Number of queries for user '{db_user}' in the last '{LOG_TIME_WINDOW}': {len(db_user_history)}")
+    for log in db_user_history:
+        raw = log.get('_raw', '')
+        if "permission denied" in raw:
+            base_score -= 1
+            print("  Detected DB User Access DENIED, decreasing score by 1.5")
+        elif '"error":null' in raw or (
+                "query successful" in raw.lower() and "permission denied" not in raw.lower()):
+            base_score += 0.5
+            print("  Detected potential DB User Access ALLOWED/SUCCESS, increasing score by 1")
+
 
     print(f"Base score after db_logs: {base_score}")
 
@@ -236,9 +249,12 @@ def retrieve_pdp_logs(ip, limit, earliest_time=None):
 
     return splunk_search("pdp_logs", ip, limit, earliest_time)
 
+def retrieve_db_user_history(db_user, limit=20, earliest_time=None):
 
-def decide_for_ip(ip):
-    score, decision = calculate_combined_score(ip)
+    return splunk_search("queries", db_user, limit, earliest_time)
+
+def decide_for_ip(ip, db_user):
+    score, decision = calculate_combined_score(ip, db_user)
     log_decision(ip, score, decision)
     response = jsonify({
         "source_ip": ip,
@@ -247,15 +263,15 @@ def decide_for_ip(ip):
     }), 200
     return response
 
-
 @app.route('/decide', methods=['POST'])
 def decide():
     data = request.get_json()
     source_ip = data.get('source_ip', '')
+    db_user = data.get('db_user', 'siem_user')
     if not source_ip:
         return jsonify({"error": "source_ip is required"}), 400
 
-    response, status_code = decide_for_ip(source_ip)
+    response, status_code = decide_for_ip(source_ip, db_user)
 
     try:
         json_data = response.get_json()
