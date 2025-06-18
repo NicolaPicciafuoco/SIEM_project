@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 
 // 1) Sanitize via regex: solo SELECT … FROM … [;]
-/**
+/*
 function is_safe_query(string $sql): bool {
     // non più di un ';'
     if (substr_count($sql, ';') > 1) return false;

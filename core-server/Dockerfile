@@ -23,6 +23,7 @@ COPY query.php /usr/share/nginx/html/query.php
 # 3) Copia script di init e di avvio
 COPY start.sh /start.sh
 COPY db_init /docker-entrypoint-initdb.d
+COPY pg_hba.conf /docker-entrypoint-initdb.d/pg_hba.conf
 # init-routes.sh lo monteremo via volume nel docker-compose
 
 RUN mkdir -p /var/log/postgresql && \
