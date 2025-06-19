@@ -79,6 +79,9 @@ def calculate_combined_score(ip, db_user):
         if "TCP_DENIED/403" in raw or "TCP_FORBIDDEN/403" in raw:
             base_score -= 1
             print(f"  Squid DENIED found, decreasing score by 1. Current score: {base_score}")
+        elif "TCP_MISS/404" in raw:
+            base_score -= 0.1
+            print(f"  Squid MISS found, decreasing score by 0.1. Current score: {base_score}")
         elif "TCP_MISS/200" in raw:
             base_score += 1
             print(f"  Squid ALLOWED (TCP_MISS/200) found, increasing score by 1. Current score: {base_score}")
@@ -88,7 +91,7 @@ def calculate_combined_score(ip, db_user):
     for log in pdp_logs:
         raw = log.get('_raw', '')
         if "PDP Decision: ALLOW" in raw:
-            base_score += 1
+            base_score += 0.5
             print(f"  PDP ALLOW found, increasing score by 1. Current score: {base_score}")
         elif "PDP Decision: DENY" in raw:
             base_score -= 1
@@ -112,10 +115,14 @@ def calculate_combined_score(ip, db_user):
         if "permission denied" in raw:
             base_score -= 1
             print("  Detected DB User Access DENIED, decreasing score by 1.5")
+        elif "password authentication failed" in raw:
+            base_score -= 1.5
+            print("  Detected DB User Access DENIED (password authentication failed), decreasing score by 1.5")
         elif '"error":null' in raw or (
                 "query successful" in raw.lower() and "permission denied" not in raw.lower()):
             base_score += 0.5
             print("  Detected potential DB User Access ALLOWED/SUCCESS, increasing score by 1")
+
 
 
     print(f"Base score after db_logs: {base_score}")
