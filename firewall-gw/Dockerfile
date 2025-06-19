@@ -25,7 +25,6 @@ RUN apt-get update \
 
 # Copiamo lo script fw-init.sh e init-routes.sh nella cartella /usr/local/bin
 # e diamo i permessi di esecuzione
-COPY rsyslog-snort.conf /etc/rsyslog.d/90-snort.conf
 COPY fw-init.sh /usr/local/bin/fw-init.sh
 COPY init-routes.sh /usr/local/bin/init-routes.sh
 
