@@ -37,6 +37,8 @@ All components communicate over five isolated Docker networks (`guest_net`, `mgm
 
 To install Docker and Docker Compose, follow the official [guide](https://docs.docker.com/compose/install/).
 
+_Your password must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character._
+
 ## 🛠️ Installation and Startup
 
 #### 1. Download the Code
