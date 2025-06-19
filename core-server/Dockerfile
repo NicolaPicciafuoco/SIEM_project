@@ -19,6 +19,7 @@ RUN sed -i 's|^listen = .*|listen = 127.0.0.1:9000|' /etc/php82/php-fpm.d/www.co
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY query.php /usr/share/nginx/html/query.php
+COPY target.html /usr/share/nginx/html/target.html
 
 # 3) Copia script di init e di avvio
 COPY start.sh /start.sh
